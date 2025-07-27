@@ -8,9 +8,9 @@ local function open_note_with_title(path, title)
   
   -- If auto_insert_title is enabled and buffer is empty, insert title
   if config.auto_insert_title and vim.fn.getline(1) == "" and vim.fn.line('$') == 1 then
-    local lines = {"# " .. (title or config.default_title), ""}
+    local lines = {"# " .. (title or config.default_title), "", ""}
     vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
-    -- Move cursor to line 3
+    -- Move cursor to line 3 (after title and blank line)
     vim.api.nvim_win_set_cursor(0, {3, 0})
   end
 end
