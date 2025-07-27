@@ -761,22 +761,30 @@ local function setup_keymaps()
   
   -- Mouse support
   vim.keymap.set('n', '<LeftMouse>', function()
-    -- Move cursor to mouse position first
-    vim.cmd('normal! <LeftMouse>')
-    -- Then open the file/directory
-    open_note()
+    -- Get mouse position and set cursor
+    local mouse_pos = vim.fn.getmousepos()
+    if mouse_pos.line > 0 and mouse_pos.line <= #entries then
+      vim.api.nvim_win_set_cursor(0, {mouse_pos.line, 0})
+      open_note()
+    end
   end, opts)
   
   vim.keymap.set('n', '<2-LeftMouse>', function()
     -- Double click also opens file/directory
-    vim.cmd('normal! <2-LeftMouse>')
-    open_note()
+    local mouse_pos = vim.fn.getmousepos()
+    if mouse_pos.line > 0 and mouse_pos.line <= #entries then
+      vim.api.nvim_win_set_cursor(0, {mouse_pos.line, 0})
+      open_note()
+    end
   end, opts)
   
   vim.keymap.set('n', '<RightMouse>', function()
     -- Right click toggles selection
-    vim.cmd('normal! <RightMouse>')
-    toggle_selection()
+    local mouse_pos = vim.fn.getmousepos()
+    if mouse_pos.line > 0 and mouse_pos.line <= #entries then
+      vim.api.nvim_win_set_cursor(0, {mouse_pos.line, 0})
+      toggle_selection()
+    end
   end, opts)
   
   -- Prevent modification
