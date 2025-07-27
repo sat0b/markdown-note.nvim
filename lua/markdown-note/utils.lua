@@ -50,28 +50,68 @@ end
 function M.select_project(config, callback)
   local projects = M.get_projects(config)
   
-  vim.ui.select(projects, {
-    prompt = "Select project:",
-    format_item = function(item)
-      return item
-    end,
-  }, function(choice)
-    if not choice then
-      return
-    end
+  -- Try to use Telescope if available
+  local has_telescope, telescope = pcall(require, "telescope")
+  if has_telescope then
+    local pickers = require("telescope.pickers")
+    local finders = require("telescope.finders")
+    local conf = require("telescope.config").values
+    local actions = require("telescope.actions")
+    local action_state = require("telescope.actions.state")
     
-    if choice == "(new project)" then
-      vim.ui.input({
-        prompt = "Enter new project name: ",
-      }, function(project_name)
-        if project_name and project_name ~= "" then
-          callback(project_name)
-        end
-      end)
-    else
-      callback(choice == "(default)" and nil or choice)
-    end
-  end)
+    pickers.new({}, {
+      prompt_title = "Select Project",
+      finder = finders.new_table {
+        results = projects
+      },
+      sorter = conf.generic_sorter({}),
+      attach_mappings = function(prompt_bufnr, map)
+        actions.select_default:replace(function()
+          actions.close(prompt_bufnr)
+          local selection = action_state.get_selected_entry()
+          if selection then
+            local choice = selection[1]
+            if choice == "(new project)" then
+              vim.ui.input({
+                prompt = "Enter new project name: ",
+              }, function(project_name)
+                if project_name and project_name ~= "" then
+                  callback(project_name)
+                end
+              end)
+            else
+              callback(choice == "(default)" and nil or choice)
+            end
+          end
+        end)
+        return true
+      end,
+    }):find()
+  else
+    -- Fallback to vim.ui.select
+    vim.ui.select(projects, {
+      prompt = "Select project:",
+      format_item = function(item)
+        return item
+      end,
+    }, function(choice)
+      if not choice then
+        return
+      end
+      
+      if choice == "(new project)" then
+        vim.ui.input({
+          prompt = "Enter new project name: ",
+        }, function(project_name)
+          if project_name and project_name ~= "" then
+            callback(project_name)
+          end
+        end)
+      else
+        callback(choice == "(default)" and nil or choice)
+      end
+    end)
+  end
 end
 
 function M.get_all_notes(config, project)

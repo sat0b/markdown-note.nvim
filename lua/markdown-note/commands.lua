@@ -77,16 +77,52 @@ function M.note_list(opts)
     return
   end
   
-  vim.ui.select(notes, {
-    prompt = "Select note:",
-    format_item = function(item)
-      return item.display
-    end,
-  }, function(choice)
-    if choice then
-      vim.cmd(config.open_cmd .. " " .. choice.path)
-    end
-  end)
+  -- Try to use Telescope if available
+  local has_telescope, telescope = pcall(require, "telescope")
+  if has_telescope then
+    local pickers = require("telescope.pickers")
+    local finders = require("telescope.finders")
+    local conf = require("telescope.config").values
+    local actions = require("telescope.actions")
+    local action_state = require("telescope.actions.state")
+    
+    pickers.new({}, {
+      prompt_title = "Select Note",
+      finder = finders.new_table {
+        results = notes,
+        entry_maker = function(entry)
+          return {
+            value = entry,
+            display = entry.display,
+            ordinal = entry.display,
+          }
+        end
+      },
+      sorter = conf.generic_sorter({}),
+      attach_mappings = function(prompt_bufnr, map)
+        actions.select_default:replace(function()
+          actions.close(prompt_bufnr)
+          local selection = action_state.get_selected_entry()
+          if selection then
+            vim.cmd(config.open_cmd .. " " .. selection.value.path)
+          end
+        end)
+        return true
+      end,
+    }):find()
+  else
+    -- Fallback to vim.ui.select
+    vim.ui.select(notes, {
+      prompt = "Select note:",
+      format_item = function(item)
+        return item.display
+      end,
+    }, function(choice)
+      if choice then
+        vim.cmd(config.open_cmd .. " " .. choice.path)
+      end
+    end)
+  end
 end
 
 function M.note_projects()
@@ -104,16 +140,45 @@ function M.note_projects()
     return
   end
   
-  vim.ui.select(filtered, {
-    prompt = "Projects:",
-    format_item = function(item)
-      return item
-    end,
-  }, function(choice)
-    if choice then
-      M.note_list({ args = choice })
-    end
-  end)
+  -- Try to use Telescope if available
+  local has_telescope, telescope = pcall(require, "telescope")
+  if has_telescope then
+    local pickers = require("telescope.pickers")
+    local finders = require("telescope.finders")
+    local conf = require("telescope.config").values
+    local actions = require("telescope.actions")
+    local action_state = require("telescope.actions.state")
+    
+    pickers.new({}, {
+      prompt_title = "Projects",
+      finder = finders.new_table {
+        results = filtered
+      },
+      sorter = conf.generic_sorter({}),
+      attach_mappings = function(prompt_bufnr, map)
+        actions.select_default:replace(function()
+          actions.close(prompt_bufnr)
+          local selection = action_state.get_selected_entry()
+          if selection then
+            M.note_list({ args = selection[1] })
+          end
+        end)
+        return true
+      end,
+    }):find()
+  else
+    -- Fallback to vim.ui.select
+    vim.ui.select(filtered, {
+      prompt = "Projects:",
+      format_item = function(item)
+        return item
+      end,
+    }, function(choice)
+      if choice then
+        M.note_list({ args = choice })
+      end
+    end)
+  end
 end
 
 function M.note_set_default(opts)
