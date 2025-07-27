@@ -19,7 +19,7 @@ Using lazy.nvim:
 
 - `:NoteNew` - Create a new note
 - `:NoteQuick <title> [project]` - Quick note creation
-- `:NoteToday` - Create today's note
+- `:NoteToday` - Open today's daily note (uses default project)
 - `:NoteList [project]` - List notes
 - `:NoteFindFile` - Find notes with Telescope
 - `:NoteGrep` - Search note contents with Telescope
@@ -61,14 +61,3 @@ vim.keymap.set("n", "<leader>nf", "<cmd>NoteFindFile<cr>", { desc = "Find notes"
 vim.keymap.set("n", "<leader>ng", "<cmd>NoteGrep<cr>", { desc = "Search in notes" })
 ```
 
-### Alternative keybinding scheme
-
-If you prefer a different prefix:
-
-```lua
--- Using <leader>m for "markdown"
-vim.keymap.set("n", "<leader>mn", "<cmd>NoteNew<cr>", { desc = "New note" })
-vim.keymap.set("n", "<leader>mt", "<cmd>NoteToday<cr>", { desc = "Today's note" })
-vim.keymap.set("n", "<leader>ml", "<cmd>NoteList<cr>", { desc = "List notes" })
-vim.keymap.set("n", "<leader>ms", "<cmd>NoteGrep<cr>", { desc = "Search notes" })
-```

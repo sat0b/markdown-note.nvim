@@ -57,15 +57,10 @@ function M.note_quick(opts)
 end
 
 function M.note_today()
-  utils.select_project(config, function(project)
-    vim.ui.input({
-      prompt = "Enter title (default: daily): ",
-    }, function(title)
-      title = title and title ~= "" and title or "daily"
-      local path, note_title = utils.create_note_with_title(config, title, project)
-      open_note_with_title(path, note_title)
-    end)
-  end)
+  local title = "daily"
+  local project = config.default_project
+  local path, note_title = utils.create_note_with_title(config, title, project)
+  open_note_with_title(path, note_title)
 end
 
 function M.note_list(opts)
