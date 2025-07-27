@@ -62,7 +62,8 @@ end
 
 function M.note_today()
   local date = utils.get_date_string(config)
-  local project = config.default_project
+  -- Always use "daily" project for today's notes
+  local project = "daily"
   local path = utils.create_note_path(config, date, project)
   open_note_with_title(path, date)
 end

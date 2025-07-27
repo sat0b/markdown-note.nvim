@@ -8,8 +8,8 @@ This plugin automatically creates and manages notes with a consistent naming pat
 
 ```
 ~/Documents/notes/
-├── daily/
-│   ├── 2025-07-27.md
+├── daily/                      # Daily notes always go here
+│   ├── 2025-07-27.md          # Created with :NoteToday
 │   ├── 2025-07-26.md
 │   └── 2025-07-25.md
 ├── project-a/
@@ -46,7 +46,7 @@ Using lazy.nvim:
 ### Creating Notes
 - `:NoteNew` - Create a new note
 - `:NoteQuick <title> [project]` - Quick note creation
-- `:NoteToday` - Open today's daily note (uses default project, creates YYYY-MM-DD.md)
+- `:NoteToday` - Open today's daily note (always creates in daily/ folder as YYYY-MM-DD.md)
 
 ### Browsing Notes
 - `:NoteList [project]` - List notes
@@ -164,8 +164,7 @@ require("markdown-note").setup({
   -- Default title for new notes
   default_title = "note",
   
-  -- Default project (nil for no project)
-  -- Set to "daily" to put daily notes in daily/ folder
+  -- Default project for :NoteNew and :NoteQuick (nil for no project)
   default_project = nil,
   
   -- Command to open notes (edit, split, vsplit, tabedit)
