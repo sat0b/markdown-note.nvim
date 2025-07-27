@@ -27,6 +27,7 @@ Using lazy.nvim:
 - `:NoteProjects` - Browse projects
 - `:NoteFindFile` - Find notes with Telescope
 - `:NoteGrep` - Search note contents with Telescope
+- `:NoteExplorer` - Toggle file explorer at bottom of screen
 
 ### Managing Notes
 - `:NoteRename` - Rename current note (updates both filename and title)
@@ -52,6 +53,7 @@ M.notes = {
     ["<leader>np"] = { "<cmd>NoteProjects<cr>", "Browse projects" },
     ["<leader>nf"] = { "<cmd>NoteFindFile<cr>", "Find note files" },
     ["<leader>ng"] = { "<cmd>NoteGrep<cr>", "Search in notes" },
+    ["<leader>ne"] = { "<cmd>NoteExplorer<cr>", "Toggle note explorer" },
     ["<leader>nr"] = { "<cmd>NoteRename<cr>", "Rename current note" },
     ["<leader>nd"] = { "<cmd>NoteDelete<cr>", "Delete current note" },
     ["<leader>nD"] = { "<cmd>NoteDeleteMulti<cr>", "Delete multiple notes" },
@@ -72,8 +74,48 @@ vim.keymap.set("n", "<leader>nl", "<cmd>NoteList<cr>", { desc = "List notes" })
 vim.keymap.set("n", "<leader>np", "<cmd>NoteProjects<cr>", { desc = "Browse projects" })
 vim.keymap.set("n", "<leader>nf", "<cmd>NoteFindFile<cr>", { desc = "Find notes" })
 vim.keymap.set("n", "<leader>ng", "<cmd>NoteGrep<cr>", { desc = "Search in notes" })
+vim.keymap.set("n", "<leader>ne", "<cmd>NoteExplorer<cr>", { desc = "Toggle explorer" })
 vim.keymap.set("n", "<leader>nr", "<cmd>NoteRename<cr>", { desc = "Rename note" })
 vim.keymap.set("n", "<leader>nd", "<cmd>NoteDelete<cr>", { desc = "Delete current note" })
 vim.keymap.set("n", "<leader>nD", "<cmd>NoteDeleteMulti<cr>", { desc = "Delete multiple notes" })
+```
+
+## Note Explorer
+
+The Note Explorer provides a file tree view of your notes at the bottom of the screen.
+
+### Explorer Keybindings
+
+When the explorer window is active:
+- `Enter`, `o`, `l` - Open file or expand/collapse directory
+- `h`, `Space` - Expand/collapse directory
+- `q`, `Esc` - Close explorer
+- `r`, `R` - Refresh explorer
+
+## Configuration
+
+```lua
+require("markdown-note").setup({
+  -- Notes directory
+  notes_dir = vim.fn.expand("~/Documents/notes"),
+  
+  -- Date format for note filenames
+  date_format = "%Y-%m-%d",
+  
+  -- Default title for new notes
+  default_title = "note",
+  
+  -- Default project (nil for no project)
+  default_project = nil,
+  
+  -- Command to open notes (edit, split, vsplit, tabedit)
+  open_cmd = "edit",
+  
+  -- Automatically insert title header in new notes
+  auto_insert_title = true,
+  
+  -- Keep explorer open after opening a file
+  explorer_close_on_open = false,
+})
 ```
 
