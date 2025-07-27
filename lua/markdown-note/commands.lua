@@ -27,6 +27,8 @@ function M.setup(cfg)
   vim.api.nvim_create_user_command("NoteSetDefault", M.note_set_default, { nargs = 1 })
   vim.api.nvim_create_user_command("NoteFindFile", M.note_find_file, {})
   vim.api.nvim_create_user_command("NoteGrep", M.note_grep, {})
+  vim.api.nvim_create_user_command("NoteDelete", M.note_delete, {})
+  vim.api.nvim_create_user_command("NoteDeleteMulti", M.note_delete_multi, {})
 end
 
 function M.note_new()
@@ -208,6 +210,111 @@ function M.note_grep()
     cwd = config.notes_dir,
     prompt_title = "Search Notes Content",
   })
+end
+
+function M.note_delete()
+  local current_file = vim.fn.expand('%:p')
+  local notes_dir = vim.fn.expand(config.notes_dir)
+  
+  -- Check if current file is in notes directory
+  if not current_file:match("^" .. notes_dir) then
+    vim.notify("Current file is not a note", vim.log.levels.ERROR)
+    return
+  end
+  
+  local filename = vim.fn.expand('%:t')
+  vim.ui.select({"Yes", "No"}, {
+    prompt = string.format("Delete '%s'?", filename),
+  }, function(choice)
+    if choice == "Yes" then
+      -- Close buffer
+      vim.cmd("bdelete!")
+      -- Delete file
+      local ok, err = os.remove(current_file)
+      if ok then
+        vim.notify("Note deleted: " .. filename, vim.log.levels.INFO)
+      else
+        vim.notify("Failed to delete note: " .. (err or "unknown error"), vim.log.levels.ERROR)
+      end
+    end
+  end)
+end
+
+function M.note_delete_multi()
+  local notes = utils.get_all_notes(config)
+  
+  if #notes == 0 then
+    vim.notify("No notes found", vim.log.levels.INFO)
+    return
+  end
+  
+  -- Try to use Telescope for multi-select
+  local has_telescope, telescope = pcall(require, "telescope")
+  if has_telescope then
+    local pickers = require("telescope.pickers")
+    local finders = require("telescope.finders")
+    local conf = require("telescope.config").values
+    local actions = require("telescope.actions")
+    local action_state = require("telescope.actions.state")
+    
+    pickers.new({}, {
+      prompt_title = "Delete Notes (Tab to select multiple, Enter to confirm)",
+      finder = finders.new_table {
+        results = notes,
+        entry_maker = function(entry)
+          return {
+            value = entry,
+            display = entry.display,
+            ordinal = entry.display,
+          }
+        end
+      },
+      sorter = conf.generic_sorter({}),
+      attach_mappings = function(prompt_bufnr, map)
+        actions.select_default:replace(function()
+          local picker = action_state.get_current_picker(prompt_bufnr)
+          local multi_selections = picker:get_multi_selection()
+          
+          if vim.tbl_isempty(multi_selections) then
+            vim.notify("No notes selected", vim.log.levels.WARN)
+            actions.close(prompt_bufnr)
+            return
+          end
+          
+          actions.close(prompt_bufnr)
+          
+          -- Confirm deletion
+          local count = #multi_selections
+          vim.ui.select({"Yes", "No"}, {
+            prompt = string.format("Delete %d note(s)?", count),
+          }, function(choice)
+            if choice == "Yes" then
+              local deleted = 0
+              for _, selection in ipairs(multi_selections) do
+                local ok, err = os.remove(selection.value.path)
+                if ok then
+                  deleted = deleted + 1
+                else
+                  vim.notify("Failed to delete: " .. selection.value.display, vim.log.levels.ERROR)
+                end
+              end
+              vim.notify(string.format("Deleted %d/%d notes", deleted, count), vim.log.levels.INFO)
+            end
+          end)
+        end)
+        
+        -- Allow multi-selection with Tab
+        map("i", "<Tab>", actions.toggle_selection + actions.move_selection_worse)
+        map("i", "<S-Tab>", actions.toggle_selection + actions.move_selection_better)
+        map("n", "<Tab>", actions.toggle_selection + actions.move_selection_worse)
+        map("n", "<S-Tab>", actions.toggle_selection + actions.move_selection_better)
+        
+        return true
+      end,
+    }):find()
+  else
+    vim.notify("Telescope is required for multi-delete", vim.log.levels.ERROR)
+  end
 end
 
 return M
