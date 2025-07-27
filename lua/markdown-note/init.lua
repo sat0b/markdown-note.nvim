@@ -17,6 +17,7 @@ function M.setup(opts)
   
   -- Load modules
   require("markdown-note.commands").setup(M.config)
+  require("markdown-note.explorer").setup(M.config)
   
   -- Mark as setup
   vim.g.markdown_note_setup_called = true

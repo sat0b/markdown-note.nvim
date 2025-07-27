@@ -30,6 +30,7 @@ function M.setup(cfg)
   vim.api.nvim_create_user_command("NoteDelete", M.note_delete, {})
   vim.api.nvim_create_user_command("NoteDeleteMulti", M.note_delete_multi, {})
   vim.api.nvim_create_user_command("NoteRename", M.note_rename, {})
+  vim.api.nvim_create_user_command("NoteExplorer", M.note_explorer, {})
 end
 
 function M.note_new()
@@ -380,6 +381,10 @@ function M.note_rename()
       vim.notify("Failed to rename file: " .. (err or "unknown error"), vim.log.levels.ERROR)
     end
   end)
+end
+
+function M.note_explorer()
+  require("markdown-note.explorer").toggle()
 end
 
 return M
