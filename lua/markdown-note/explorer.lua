@@ -17,6 +17,10 @@ local search_active = false
 local search_matches = {}
 local current_match_index = 0
 
+-- Sort configuration
+local sort_order = "desc" -- "asc" or "desc"
+local sort_by = "name" -- "name" or "date"
+
 -- Help display state
 local help_win = nil
 local help_buf = nil
@@ -55,9 +59,47 @@ local function build_tree(path, prefix, expanded_dirs)
     end
   end
   
-  -- Sort
-  table.sort(dirs)
-  table.sort(files)
+  -- Get file stats for date sorting if needed
+  local file_stats = {}
+  if sort_by == "date" then
+    for _, name in ipairs(files) do
+      local full_path = path .. "/" .. name
+      local stat = vim.loop.fs_stat(full_path)
+      if stat then
+        file_stats[name] = stat.mtime.sec
+      else
+        file_stats[name] = 0
+      end
+    end
+  end
+  
+  -- Sort function
+  local function get_sort_func(is_descending)
+    if sort_by == "date" then
+      return function(a, b)
+        local time_a = file_stats[a] or 0
+        local time_b = file_stats[b] or 0
+        if is_descending then
+          return time_a > time_b
+        else
+          return time_a < time_b
+        end
+      end
+    else -- sort by name
+      return function(a, b)
+        if is_descending then
+          return a > b
+        else
+          return a < b
+        end
+      end
+    end
+  end
+  
+  -- Sort directories and files
+  local is_desc = sort_order == "desc"
+  table.sort(dirs, get_sort_func(is_desc))
+  table.sort(files, get_sort_func(is_desc))
   
   -- Add directories first
   for _, name in ipairs(dirs) do
@@ -143,6 +185,10 @@ local function get_help_content()
       { "/", "Start search" },
       { "n", "Next match" },
       { "N", "Previous match" }
+    }},
+    { title = "Sort", keys = {
+      { "s", "Toggle sort order (asc/desc)" },
+      { "S", "Toggle sort by (name/date)" }
     }},
     { title = "Other", keys = {
       { "R", "Refresh explorer" },
@@ -737,6 +783,19 @@ local function clear_search()
   current_match_index = 0
 end
 
+-- Sort functions
+local function toggle_sort_order()
+  sort_order = sort_order == "asc" and "desc" or "asc"
+  vim.notify("Sort order: " .. sort_order)
+  refresh_explorer()
+end
+
+local function toggle_sort_by()
+  sort_by = sort_by == "name" and "date" or "name"
+  vim.notify("Sort by: " .. sort_by)
+  refresh_explorer()
+end
+
 -- Search functions continue below...
 
 local function setup_keymaps()
@@ -785,6 +844,10 @@ local function setup_keymaps()
   
   -- Refresh
   vim.keymap.set('n', 'R', refresh_explorer, opts)
+  
+  -- Sort
+  vim.keymap.set('n', 's', toggle_sort_order, opts)
+  vim.keymap.set('n', 'S', toggle_sort_by, opts)
   
   -- Help - try multiple keys for better compatibility
   vim.keymap.set('n', 'g?', toggle_help, opts)
@@ -837,6 +900,14 @@ end
 
 function M.setup(cfg)
   config = cfg
+  
+  -- Apply sort configuration from config
+  if config.explorer_sort_order then
+    sort_order = config.explorer_sort_order
+  end
+  if config.explorer_sort_by then
+    sort_by = config.explorer_sort_by
+  end
 end
 
 function M.open()
