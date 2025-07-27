@@ -99,31 +99,38 @@ local function refresh_explorer()
     return
   end
   
-  local notes_dir = vim.fn.expand(config.notes_dir)
-  local expanded_dirs = {}
-  
-  -- Preserve expanded state
-  for _, entry in ipairs(entries) do
-    if entry.type == "directory" and entry.expanded then
-      expanded_dirs[entry.relative_path] = true
-    end
-  end
-  
-  entries = build_tree(notes_dir, "", expanded_dirs)
-  
-  -- Build display lines
   local lines = {}
-  for _, entry in ipairs(entries) do
-    local icon = get_icon(entry)
-    local selection = get_selection_mark(entry)
-    local line = entry.prefix .. selection .. icon .. entry.name
+  
+  if show_help_mode then
+    -- Show help content
+    lines = get_help_lines()
+  else
+    -- Show file tree
+    local notes_dir = vim.fn.expand(config.notes_dir)
+    local expanded_dirs = {}
     
-    -- Add clipboard indicator
-    if clipboard.action and vim.tbl_contains(clipboard.entries, entry.path) then
-      line = line .. " [" .. clipboard.action:sub(1,1):upper() .. "]"
+    -- Preserve expanded state
+    for _, entry in ipairs(entries) do
+      if entry.type == "directory" and entry.expanded then
+        expanded_dirs[entry.relative_path] = true
+      end
     end
     
-    table.insert(lines, line)
+    entries = build_tree(notes_dir, "", expanded_dirs)
+    
+    -- Build display lines
+    for _, entry in ipairs(entries) do
+      local icon = get_icon(entry)
+      local selection = get_selection_mark(entry)
+      local line = entry.prefix .. selection .. icon .. entry.name
+      
+      -- Add clipboard indicator
+      if clipboard.action and vim.tbl_contains(clipboard.entries, entry.path) then
+        line = line .. " [" .. clipboard.action:sub(1,1):upper() .. "]"
+      end
+      
+      table.insert(lines, line)
+    end
   end
   
   -- Update buffer
@@ -131,13 +138,15 @@ local function refresh_explorer()
   vim.api.nvim_buf_set_lines(explorer_buf, 0, -1, false, lines)
   vim.api.nvim_buf_set_option(explorer_buf, 'modifiable', false)
   
-  -- Update search matches if active
-  if search_active and search_term ~= "" then
+  -- Update search matches if active and not in help mode
+  if not show_help_mode and search_active and search_term ~= "" then
     update_search_matches()
   end
 end
 
 local function toggle_directory()
+  if show_help_mode then return end
+  
   local row = vim.api.nvim_win_get_cursor(0)[1]
   local entry = entries[row]
   
@@ -149,6 +158,8 @@ local function toggle_directory()
 end
 
 local function open_note(cmd)
+  if show_help_mode then return end
+  
   local row = vim.api.nvim_win_get_cursor(0)[1]
   local entry = entries[row]
   
@@ -175,6 +186,8 @@ end
 
 -- Selection functions
 local function toggle_selection()
+  if show_help_mode then return end
+  
   local row = vim.api.nvim_win_get_cursor(0)[1]
   local entry = entries[row]
   
@@ -194,6 +207,8 @@ local function toggle_selection()
 end
 
 local function select_all()
+  if show_help_mode then return end
+  
   for _, entry in ipairs(entries) do
     if entry.type == "file" then
       selected_entries[entry.path] = true
@@ -203,6 +218,8 @@ local function select_all()
 end
 
 local function clear_selection()
+  if show_help_mode then return end
+  
   selected_entries = {}
   refresh_explorer()
 end
@@ -226,6 +243,8 @@ end
 
 -- Clipboard functions
 local function copy_entries()
+  if show_help_mode then return end
+  
   local selected = get_selected_or_current()
   if #selected > 0 then
     clipboard.entries = selected
@@ -236,6 +255,8 @@ local function copy_entries()
 end
 
 local function cut_entries()
+  if show_help_mode then return end
+  
   local selected = get_selected_or_current()
   if #selected > 0 then
     clipboard.entries = selected
@@ -246,6 +267,8 @@ local function cut_entries()
 end
 
 local function paste_entries()
+  if show_help_mode then return end
+  
   if #clipboard.entries == 0 then
     vim.notify("Nothing to paste")
     return
@@ -311,6 +334,8 @@ end
 
 -- File operations
 local function create_note()
+  if show_help_mode then return end
+  
   local row = vim.api.nvim_win_get_cursor(0)[1]
   local entry = entries[row]
   local target_dir
@@ -365,6 +390,8 @@ local function create_note()
 end
 
 local function delete_entries()
+  if show_help_mode then return end
+  
   local selected = get_selected_or_current()
   if #selected == 0 then
     return
@@ -412,6 +439,8 @@ local function delete_entries()
 end
 
 local function rename_entry()
+  if show_help_mode then return end
+  
   local row = vim.api.nvim_win_get_cursor(0)[1]
   local entry = entries[row]
   
@@ -499,6 +528,8 @@ local function update_search_matches()
 end
 
 local function start_search()
+  if show_help_mode then return end
+  
   vim.ui.input({
     prompt = "Search: ",
     default = search_term,
@@ -552,10 +583,19 @@ local function clear_search()
   current_match_index = 0
 end
 
+-- State for help display
+local show_help_mode = false
+
 -- Help display
-local function show_help()
-  local help_lines = {
-    "Note Explorer Help",
+local function toggle_help()
+  show_help_mode = not show_help_mode
+  refresh_explorer()
+end
+
+local function get_help_lines()
+  return {
+    "Note Explorer Keybindings",
+    "========================",
     "",
     "Navigation:",
     "  Enter/o/l  Open file or expand directory",
@@ -590,49 +630,10 @@ local function show_help()
     "",
     "Other:",
     "  R          Refresh explorer",
-    "  ?          Show this help",
+    "  ?          Toggle this help",
     "",
-    "Press any key to close help"
+    "Press ? again to return to file view"
   }
-  
-  -- Create help buffer
-  local help_buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_lines(help_buf, 0, -1, false, help_lines)
-  vim.api.nvim_buf_set_option(help_buf, 'modifiable', false)
-  vim.api.nvim_buf_set_option(help_buf, 'buftype', 'nofile')
-  
-  -- Calculate window size
-  local width = 50
-  local height = #help_lines
-  local row = math.floor((vim.o.lines - height) / 2)
-  local col = math.floor((vim.o.columns - width) / 2)
-  
-  -- Create floating window
-  local help_win = vim.api.nvim_open_win(help_buf, true, {
-    relative = 'editor',
-    row = row,
-    col = col,
-    width = width,
-    height = height,
-    style = 'minimal',
-    border = 'rounded'
-  })
-  
-  -- Set keymaps to close on any key
-  local close_help = function()
-    vim.api.nvim_win_close(help_win, true)
-  end
-  
-  for _, key in ipairs({'<Esc>', 'q', '<CR>', '<Space>'}) do
-    vim.keymap.set('n', key, close_help, { buffer = help_buf })
-  end
-  
-  -- Also close on any other key press
-  vim.api.nvim_create_autocmd('CursorMoved', {
-    buffer = help_buf,
-    once = true,
-    callback = close_help
-  })
 end
 
 local function setup_keymaps()
@@ -683,7 +684,7 @@ local function setup_keymaps()
   vim.keymap.set('n', 'R', refresh_explorer, opts)
   
   -- Help
-  vim.keymap.set('n', '?', show_help, opts)
+  vim.keymap.set('n', '?', toggle_help, opts)
   
   -- Prevent modification
   vim.keymap.set('n', 'i', '<Nop>', opts)
@@ -710,6 +711,7 @@ function M.open()
   search_active = false
   search_matches = {}
   current_match_index = 0
+  show_help_mode = false
   
   -- Create buffer
   explorer_buf = vim.api.nvim_create_buf(false, true)
