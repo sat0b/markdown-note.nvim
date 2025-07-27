@@ -6,6 +6,7 @@ M.config = {
   default_title = "note",
   default_project = nil,
   open_cmd = "edit",
+  auto_insert_title = true,
 }
 
 function M.setup(opts)

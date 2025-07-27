@@ -8,6 +8,7 @@ Using lazy.nvim:
 ```lua
 {
   "sat0b/markdown-note.nvim",
+  event = "VeryLazy",
   config = function()
     require("markdown-note").setup()
   end

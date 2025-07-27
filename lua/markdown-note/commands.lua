@@ -23,7 +23,7 @@ function M.note_new()
       prompt = "Enter title: ",
     }, function(title)
       if title then
-        local path = utils.create_note_path(config, title, project)
+        local path = utils.create_note_with_title(config, title, project)
         vim.cmd(config.open_cmd .. " " .. path)
       end
     end)
@@ -40,7 +40,7 @@ function M.note_quick(opts)
     return
   end
   
-  local path = utils.create_note_path(config, title, project)
+  local path = utils.create_note_with_title(config, title, project)
   vim.cmd(config.open_cmd .. " " .. path)
 end
 
@@ -50,7 +50,7 @@ function M.note_today()
       prompt = "Enter title (default: daily): ",
     }, function(title)
       title = title and title ~= "" and title or "daily"
-      local path = utils.create_note_path(config, title, project)
+      local path = utils.create_note_with_title(config, title, project)
       vim.cmd(config.open_cmd .. " " .. path)
     end)
   end)
