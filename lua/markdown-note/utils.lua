@@ -30,7 +30,15 @@ end
 
 function M.create_note_path(config, title, project)
   local date = M.get_date_string(config)
-  local filename = string.format("%s-%s.md", date, title or config.default_title)
+  local filename
+  
+  -- Check if title is already a date (matches the date format)
+  if title == date then
+    filename = string.format("%s.md", title)
+  else
+    filename = string.format("%s-%s.md", date, title or config.default_title)
+  end
+  
   local notes_dir = vim.fn.expand(config.notes_dir)
   
   if project and project ~= "(default)" then

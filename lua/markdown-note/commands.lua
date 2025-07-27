@@ -60,10 +60,10 @@ function M.note_quick(opts)
 end
 
 function M.note_today()
-  local title = "daily"
+  local date = utils.get_date_string(config)
   local project = config.default_project
-  local path, note_title = utils.create_note_with_title(config, title, project)
-  open_note_with_title(path, note_title)
+  local path = utils.create_note_path(config, date, project)
+  open_note_with_title(path, date)
 end
 
 function M.note_list(opts)
