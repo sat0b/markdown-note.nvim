@@ -630,14 +630,14 @@ local function get_help_lines()
     "",
     "Other:",
     "  R          Refresh explorer",
-    "  ?          Toggle this help",
+    "  g? or H    Toggle this help",
     "",
-    "Press ? again to return to file view"
+    "Press g? or H again to return to file view"
   }
 end
 
 local function setup_keymaps()
-  local opts = { noremap = true, silent = true, buffer = explorer_buf }
+  local opts = { noremap = true, silent = true, buffer = explorer_buf, nowait = true }
   
   -- Navigation
   vim.keymap.set('n', '<CR>', function() open_note() end, opts)
@@ -683,8 +683,10 @@ local function setup_keymaps()
   -- Refresh
   vim.keymap.set('n', 'R', refresh_explorer, opts)
   
-  -- Help
-  vim.keymap.set('n', '?', toggle_help, opts)
+  -- Help - use g? instead of ? to avoid conflicts
+  vim.keymap.set('n', 'g?', toggle_help, opts)
+  -- Also support H for help
+  vim.keymap.set('n', 'H', toggle_help, opts)
   
   -- Prevent modification
   vim.keymap.set('n', 'i', '<Nop>', opts)
