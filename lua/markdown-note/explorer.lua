@@ -322,13 +322,35 @@ local function open_note(cmd)
       local open_cmd = cmd or config.open_cmd or "edit"
       local filepath = vim.fn.fnameescape(entry.path)
       
-      -- Use pcall to catch any errors
+      -- Use a more robust file opening approach
       local ok, err = pcall(function()
-        vim.cmd(open_cmd .. " " .. filepath)
+        -- Check if buffer already exists
+        local bufnr = vim.fn.bufnr(entry.path)
+        
+        if bufnr ~= -1 and vim.api.nvim_buf_is_loaded(bufnr) then
+          -- Buffer already exists, just switch to it
+          vim.api.nvim_win_set_buf(0, bufnr)
+        else
+          -- Create new buffer or load existing one
+          bufnr = vim.fn.bufadd(entry.path)
+          vim.api.nvim_buf_set_option(bufnr, 'buflisted', true)
+          vim.api.nvim_win_set_buf(0, bufnr)
+          
+          -- Trigger BufRead autocmds manually with error suppression
+          vim.schedule(function()
+            pcall(function()
+              vim.cmd('silent! doautocmd BufRead')
+              vim.cmd('silent! doautocmd BufReadPost')
+            end)
+          end)
+        end
       end)
       
       if not ok then
-        vim.notify("Error opening file: " .. tostring(err), vim.log.levels.ERROR)
+        -- Fallback to simple command with full error suppression
+        pcall(function()
+          vim.cmd('silent! ' .. open_cmd .. " " .. filepath)
+        end)
       end
     elseif entry.type == "directory" then
       toggle_directory()
