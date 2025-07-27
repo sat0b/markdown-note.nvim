@@ -378,7 +378,7 @@ local function delete_entries()
     prompt = string.format("Delete %d items?", #selected)
   end
   
-  vim.ui.select({"Yes", "No"}, {
+  vim.ui.select({"No", "Yes"}, {
     prompt = prompt,
   }, function(choice)
     if choice == "Yes" then

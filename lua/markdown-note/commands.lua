@@ -225,7 +225,7 @@ function M.note_delete()
   end
   
   local filename = vim.fn.expand('%:t')
-  vim.ui.select({"Yes", "No"}, {
+  vim.ui.select({"No", "Yes"}, {
     prompt = string.format("Delete '%s'?", filename),
   }, function(choice)
     if choice == "Yes" then
@@ -287,7 +287,7 @@ function M.note_delete_multi()
           
           -- Confirm deletion
           local count = #multi_selections
-          vim.ui.select({"Yes", "No"}, {
+          vim.ui.select({"No", "Yes"}, {
             prompt = string.format("Delete %d note(s)?", count),
           }, function(choice)
             if choice == "Yes" then
