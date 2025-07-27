@@ -319,7 +319,17 @@ local function open_note(cmd)
       end
       
       -- Open file with specified command
-      vim.cmd((cmd or config.open_cmd) .. " " .. vim.fn.fnameescape(entry.path))
+      local open_cmd = cmd or config.open_cmd or "edit"
+      local filepath = vim.fn.fnameescape(entry.path)
+      
+      -- Use pcall to catch any errors
+      local ok, err = pcall(function()
+        vim.cmd(open_cmd .. " " .. filepath)
+      end)
+      
+      if not ok then
+        vim.notify("Error opening file: " .. tostring(err), vim.log.levels.ERROR)
+      end
     elseif entry.type == "directory" then
       toggle_directory()
     end
@@ -766,10 +776,10 @@ local function setup_keymaps()
     if mouse_pos.line > 0 and mouse_pos.line <= #entries then
       -- Set cursor without triggering normal mode commands
       vim.fn.cursor(mouse_pos.line, 1)
-      -- Schedule the action to run after the current event
-      vim.schedule(function()
+      -- Use defer_fn to ensure proper timing
+      vim.defer_fn(function()
         open_note()
-      end)
+      end, 0)
     end
   end, opts)
   
@@ -778,9 +788,9 @@ local function setup_keymaps()
     local mouse_pos = vim.fn.getmousepos()
     if mouse_pos.line > 0 and mouse_pos.line <= #entries then
       vim.fn.cursor(mouse_pos.line, 1)
-      vim.schedule(function()
+      vim.defer_fn(function()
         open_note()
-      end)
+      end, 0)
     end
   end, opts)
   
@@ -789,9 +799,9 @@ local function setup_keymaps()
     local mouse_pos = vim.fn.getmousepos()
     if mouse_pos.line > 0 and mouse_pos.line <= #entries then
       vim.fn.cursor(mouse_pos.line, 1)
-      vim.schedule(function()
+      vim.defer_fn(function()
         toggle_selection()
-      end)
+      end, 0)
     end
   end, opts)
   
