@@ -44,14 +44,7 @@ end
 
 function M.create_note_with_title(config, title, project)
   local path = M.create_note_path(config, title, project)
-  
-  -- If auto_insert_title is enabled and file doesn't exist, create it with title header
-  if config.auto_insert_title and vim.fn.filereadable(path) == 0 then
-    local content = "# " .. (title or config.default_title) .. "\n\n"
-    vim.fn.writefile({content}, path)
-  end
-  
-  return path
+  return path, title
 end
 
 function M.select_project(config, callback)

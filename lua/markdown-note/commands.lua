@@ -3,6 +3,18 @@ local utils = require("markdown-note.utils")
 
 local config = {}
 
+local function open_note_with_title(path, title)
+  vim.cmd(config.open_cmd .. " " .. path)
+  
+  -- If auto_insert_title is enabled and buffer is empty, insert title
+  if config.auto_insert_title and vim.fn.getline(1) == "" and vim.fn.line('$') == 1 then
+    local lines = {"# " .. (title or config.default_title), ""}
+    vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+    -- Move cursor to line 3
+    vim.api.nvim_win_set_cursor(0, {3, 0})
+  end
+end
+
 function M.setup(cfg)
   config = cfg
   
@@ -23,8 +35,8 @@ function M.note_new()
       prompt = "Enter title: ",
     }, function(title)
       if title then
-        local path = utils.create_note_with_title(config, title, project)
-        vim.cmd(config.open_cmd .. " " .. path)
+        local path, note_title = utils.create_note_with_title(config, title, project)
+        open_note_with_title(path, note_title)
       end
     end)
   end)
@@ -40,8 +52,8 @@ function M.note_quick(opts)
     return
   end
   
-  local path = utils.create_note_with_title(config, title, project)
-  vim.cmd(config.open_cmd .. " " .. path)
+  local path, note_title = utils.create_note_with_title(config, title, project)
+  open_note_with_title(path, note_title)
 end
 
 function M.note_today()
@@ -50,8 +62,8 @@ function M.note_today()
       prompt = "Enter title (default: daily): ",
     }, function(title)
       title = title and title ~= "" and title or "daily"
-      local path = utils.create_note_with_title(config, title, project)
-      vim.cmd(config.open_cmd .. " " .. path)
+      local path, note_title = utils.create_note_with_title(config, title, project)
+      open_note_with_title(path, note_title)
     end)
   end)
 end
