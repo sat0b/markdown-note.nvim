@@ -552,6 +552,89 @@ local function clear_search()
   current_match_index = 0
 end
 
+-- Help display
+local function show_help()
+  local help_lines = {
+    "Note Explorer Help",
+    "",
+    "Navigation:",
+    "  Enter/o/l  Open file or expand directory",
+    "  h          Collapse directory",
+    "  q          Close explorer",
+    "  Esc        Close explorer (or clear search)",
+    "",
+    "File Operations:",
+    "  a          Create new note",
+    "  d          Delete selected items",
+    "  r          Rename file",
+    "",
+    "Selection:",
+    "  Space      Toggle selection",
+    "  Ctrl-a     Select all files",
+    "  Ctrl-d     Clear selection",
+    "",
+    "Clipboard:",
+    "  c          Copy selected items",
+    "  x          Cut selected items",
+    "  p          Paste items",
+    "",
+    "Opening Files:",
+    "  Ctrl-x     Open in horizontal split",
+    "  Ctrl-v     Open in vertical split",
+    "  Ctrl-t     Open in new tab",
+    "",
+    "Search:",
+    "  /          Start search",
+    "  n          Next match",
+    "  N          Previous match",
+    "",
+    "Other:",
+    "  R          Refresh explorer",
+    "  ?          Show this help",
+    "",
+    "Press any key to close help"
+  }
+  
+  -- Create help buffer
+  local help_buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(help_buf, 0, -1, false, help_lines)
+  vim.api.nvim_buf_set_option(help_buf, 'modifiable', false)
+  vim.api.nvim_buf_set_option(help_buf, 'buftype', 'nofile')
+  
+  -- Calculate window size
+  local width = 50
+  local height = #help_lines
+  local row = math.floor((vim.o.lines - height) / 2)
+  local col = math.floor((vim.o.columns - width) / 2)
+  
+  -- Create floating window
+  local help_win = vim.api.nvim_open_win(help_buf, true, {
+    relative = 'editor',
+    row = row,
+    col = col,
+    width = width,
+    height = height,
+    style = 'minimal',
+    border = 'rounded'
+  })
+  
+  -- Set keymaps to close on any key
+  local close_help = function()
+    vim.api.nvim_win_close(help_win, true)
+  end
+  
+  for _, key in ipairs({'<Esc>', 'q', '<CR>', '<Space>'}) do
+    vim.keymap.set('n', key, close_help, { buffer = help_buf })
+  end
+  
+  -- Also close on any other key press
+  vim.api.nvim_create_autocmd('CursorMoved', {
+    buffer = help_buf,
+    once = true,
+    callback = close_help
+  })
+end
+
 local function setup_keymaps()
   local opts = { noremap = true, silent = true, buffer = explorer_buf }
   
@@ -598,6 +681,9 @@ local function setup_keymaps()
   
   -- Refresh
   vim.keymap.set('n', 'R', refresh_explorer, opts)
+  
+  -- Help
+  vim.keymap.set('n', '?', show_help, opts)
   
   -- Prevent modification
   vim.keymap.set('n', 'i', '<Nop>', opts)
