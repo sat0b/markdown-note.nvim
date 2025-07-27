@@ -1,6 +1,32 @@
 # markdown-note.nvim
 
-A simple Neovim plugin for managing markdown notes with project-based organization.
+A Neovim plugin that manages markdown notes with consistent date-prefixed filenames.
+
+## How it works
+
+This plugin automatically creates and manages notes with a consistent naming pattern:
+
+```
+~/Documents/notes/
+├── daily/
+│   ├── 2025-07-27.md
+│   ├── 2025-07-26.md
+│   └── 2025-07-25.md
+├── project-a/
+│   ├── 2025-07-27-kickoff-meeting.md
+│   ├── 2025-07-26-architecture-design.md
+│   └── 2025-07-25-requirements.md
+├── project-b/
+│   ├── 2025-07-27-api-design.md
+│   └── 2025-07-26-database-schema.md
+└── 2025-07-27-quick-memo.md
+```
+
+Key features:
+- All notes are prefixed with `YYYY-MM-DD-` format
+- Notes can be organized into project folders
+- Renaming updates both the filename and the markdown title (# header)
+- Built-in explorer sorts files by date or name
 
 ## Installation
 
@@ -20,7 +46,7 @@ Using lazy.nvim:
 ### Creating Notes
 - `:NoteNew` - Create a new note
 - `:NoteQuick <title> [project]` - Quick note creation
-- `:NoteToday` - Open today's daily note (uses default project)
+- `:NoteToday` - Open today's daily note (uses default project, creates YYYY-MM-DD.md)
 
 ### Browsing Notes
 - `:NoteList [project]` - List notes
@@ -82,15 +108,48 @@ vim.keymap.set("n", "<leader>nD", "<cmd>NoteDeleteMulti<cr>", { desc = "Delete m
 
 ## Note Explorer
 
-The Note Explorer provides a file tree view of your notes at the bottom of the screen.
+The Note Explorer provides a file tree view of your notes at the bottom of the screen with full mouse support.
 
 ### Explorer Keybindings
 
-When the explorer window is active:
+#### Navigation
 - `Enter`, `o`, `l` - Open file or expand/collapse directory
-- `h`, `Space` - Expand/collapse directory
+- `h` - Collapse directory
 - `q`, `Esc` - Close explorer
-- `r`, `R` - Refresh explorer
+
+#### File Operations
+- `a` - Create new note in current directory
+- `d` - Delete selected items
+- `r` - Rename file
+
+#### Selection & Clipboard
+- `Space` - Toggle selection
+- `Ctrl-a` - Select all files
+- `Ctrl-d` - Clear selection
+- `c` - Copy selected items
+- `x` - Cut selected items
+- `p` - Paste items
+
+#### Opening Files
+- `Ctrl-x` - Open in horizontal split
+- `Ctrl-v` - Open in vertical split
+- `Ctrl-t` - Open in new tab
+
+#### Search & Sort
+- `/` - Start search
+- `n` - Next match
+- `N` - Previous match
+- `s` - Toggle sort order (asc/desc)
+- `S` - Toggle sort by (name/date)
+
+#### Mouse Support
+- **Left click** - Open file/directory
+- **Double click** - Open file/directory
+- **Right click** - Toggle selection
+
+#### Other
+- `R` - Refresh explorer
+- `g?`, `H`, `?` - Toggle help
 
 ## Configuration
 
@@ -106,6 +165,7 @@ require("markdown-note").setup({
   default_title = "note",
   
   -- Default project (nil for no project)
+  -- Set to "daily" to put daily notes in daily/ folder
   default_project = nil,
   
   -- Command to open notes (edit, split, vsplit, tabedit)
@@ -116,6 +176,10 @@ require("markdown-note").setup({
   
   -- Keep explorer open after opening a file
   explorer_close_on_open = false,
+  
+  -- Explorer sort options
+  explorer_sort_order = "desc",  -- "asc" or "desc"
+  explorer_sort_by = "name",     -- "name" or "date"
 })
 ```
 
