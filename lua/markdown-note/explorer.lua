@@ -590,6 +590,8 @@ local show_help_mode = false
 local function toggle_help()
   show_help_mode = not show_help_mode
   refresh_explorer()
+  -- Debug message
+  vim.notify("Help mode: " .. tostring(show_help_mode))
 end
 
 local function get_help_lines()
@@ -683,10 +685,10 @@ local function setup_keymaps()
   -- Refresh
   vim.keymap.set('n', 'R', refresh_explorer, opts)
   
-  -- Help - use g? instead of ? to avoid conflicts
+  -- Help - try multiple keys for better compatibility
   vim.keymap.set('n', 'g?', toggle_help, opts)
-  -- Also support H for help
   vim.keymap.set('n', 'H', toggle_help, opts)
+  vim.keymap.set('n', '?', toggle_help, opts)
   
   -- Prevent modification
   vim.keymap.set('n', 'i', '<Nop>', opts)
@@ -736,11 +738,13 @@ function M.open()
   vim.api.nvim_win_set_option(explorer_win, 'wrap', false)
   vim.api.nvim_win_set_option(explorer_win, 'cursorline', true)
   
-  -- Setup keymaps
-  setup_keymaps()
-  
   -- Initial content
   refresh_explorer()
+  
+  -- Setup keymaps after buffer is displayed
+  vim.schedule(function()
+    setup_keymaps()
+  end)
   
   -- Autocommands
   local augroup = vim.api.nvim_create_augroup('MarkdownNoteExplorer', { clear = true })
@@ -750,6 +754,18 @@ function M.open()
     callback = function()
       explorer_buf = nil
       explorer_win = nil
+    end
+  })
+  
+  -- Make sure our keymaps take precedence
+  vim.api.nvim_create_autocmd('BufEnter', {
+    group = augroup,
+    buffer = explorer_buf,
+    callback = function()
+      -- Re-apply help keymaps to ensure they work
+      vim.keymap.set('n', 'g?', toggle_help, { buffer = explorer_buf, nowait = true, silent = true })
+      vim.keymap.set('n', 'H', toggle_help, { buffer = explorer_buf, nowait = true, silent = true })
+      vim.keymap.set('n', '?', toggle_help, { buffer = explorer_buf, nowait = true, silent = true })
     end
   })
 end
