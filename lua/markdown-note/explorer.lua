@@ -759,6 +759,26 @@ local function setup_keymaps()
   vim.keymap.set('n', 'H', toggle_help, opts)
   vim.keymap.set('n', '?', toggle_help, opts)
   
+  -- Mouse support
+  vim.keymap.set('n', '<LeftMouse>', function()
+    -- Move cursor to mouse position first
+    vim.cmd('normal! <LeftMouse>')
+    -- Then open the file/directory
+    open_note()
+  end, opts)
+  
+  vim.keymap.set('n', '<2-LeftMouse>', function()
+    -- Double click also opens file/directory
+    vim.cmd('normal! <2-LeftMouse>')
+    open_note()
+  end, opts)
+  
+  vim.keymap.set('n', '<RightMouse>', function()
+    -- Right click toggles selection
+    vim.cmd('normal! <RightMouse>')
+    toggle_selection()
+  end, opts)
+  
   -- Prevent modification
   vim.keymap.set('n', 'i', '<Nop>', opts)
   vim.keymap.set('n', 'A', '<Nop>', opts)
@@ -805,6 +825,9 @@ function M.open()
   vim.api.nvim_win_set_option(explorer_win, 'signcolumn', 'no')
   vim.api.nvim_win_set_option(explorer_win, 'wrap', false)
   vim.api.nvim_win_set_option(explorer_win, 'cursorline', true)
+  
+  -- Enable mouse support in this window
+  vim.api.nvim_buf_set_option(explorer_buf, 'mouse', 'a')
   
   -- Initial content
   refresh_explorer()
