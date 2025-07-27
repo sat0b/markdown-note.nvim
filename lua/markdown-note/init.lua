@@ -7,6 +7,7 @@ M.config = {
   default_project = nil,
   open_cmd = "edit",
   auto_insert_title = true,
+  explorer_close_on_open = false,
 }
 
 function M.setup(opts)

@@ -127,8 +127,17 @@ local function open_note()
   
   if entry then
     if entry.type == "file" then
-      -- Close explorer
-      M.close()
+      -- Save current window
+      local prev_win = vim.fn.win_getid(vim.fn.winnr('#'))
+      
+      -- Close explorer if configured
+      if config.explorer_close_on_open then
+        M.close()
+      else
+        -- Go to previous window
+        vim.api.nvim_set_current_win(prev_win)
+      end
+      
       -- Open file
       vim.cmd(config.open_cmd .. " " .. vim.fn.fnameescape(entry.path))
     elseif entry.type == "directory" then
