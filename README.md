@@ -29,6 +29,7 @@ Using lazy.nvim:
 - `:NoteGrep` - Search note contents with Telescope
 
 ### Managing Notes
+- `:NoteRename` - Rename current note (updates both filename and title)
 - `:NoteDelete` - Delete current note (with confirmation)
 - `:NoteDeleteMulti` - Delete multiple notes (Tab to select, Enter to confirm)
 - `:NoteSetDefault <project>` - Set default project
@@ -51,6 +52,7 @@ M.notes = {
     ["<leader>np"] = { "<cmd>NoteProjects<cr>", "Browse projects" },
     ["<leader>nf"] = { "<cmd>NoteFindFile<cr>", "Find note files" },
     ["<leader>ng"] = { "<cmd>NoteGrep<cr>", "Search in notes" },
+    ["<leader>nr"] = { "<cmd>NoteRename<cr>", "Rename current note" },
     ["<leader>nd"] = { "<cmd>NoteDelete<cr>", "Delete current note" },
     ["<leader>nD"] = { "<cmd>NoteDeleteMulti<cr>", "Delete multiple notes" },
   }
@@ -70,6 +72,7 @@ vim.keymap.set("n", "<leader>nl", "<cmd>NoteList<cr>", { desc = "List notes" })
 vim.keymap.set("n", "<leader>np", "<cmd>NoteProjects<cr>", { desc = "Browse projects" })
 vim.keymap.set("n", "<leader>nf", "<cmd>NoteFindFile<cr>", { desc = "Find notes" })
 vim.keymap.set("n", "<leader>ng", "<cmd>NoteGrep<cr>", { desc = "Search in notes" })
+vim.keymap.set("n", "<leader>nr", "<cmd>NoteRename<cr>", { desc = "Rename note" })
 vim.keymap.set("n", "<leader>nd", "<cmd>NoteDelete<cr>", { desc = "Delete current note" })
 vim.keymap.set("n", "<leader>nD", "<cmd>NoteDeleteMulti<cr>", { desc = "Delete multiple notes" })
 ```

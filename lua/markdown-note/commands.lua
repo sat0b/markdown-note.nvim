@@ -29,6 +29,7 @@ function M.setup(cfg)
   vim.api.nvim_create_user_command("NoteGrep", M.note_grep, {})
   vim.api.nvim_create_user_command("NoteDelete", M.note_delete, {})
   vim.api.nvim_create_user_command("NoteDeleteMulti", M.note_delete_multi, {})
+  vim.api.nvim_create_user_command("NoteRename", M.note_rename, {})
 end
 
 function M.note_new()
@@ -315,6 +316,70 @@ function M.note_delete_multi()
   else
     vim.notify("Telescope is required for multi-delete", vim.log.levels.ERROR)
   end
+end
+
+function M.note_rename()
+  local current_file = vim.fn.expand('%:p')
+  local notes_dir = vim.fn.expand(config.notes_dir)
+  
+  -- Check if current file is in notes directory
+  if not current_file:match("^" .. notes_dir) then
+    vim.notify("Current file is not a note", vim.log.levels.ERROR)
+    return
+  end
+  
+  -- Extract current title from filename
+  local filename = vim.fn.expand('%:t:r')  -- filename without extension
+  local date_pattern = "^%d%d%d%d%-%d%d%-%d%d%-"
+  local current_title = filename:gsub(date_pattern, "")
+  
+  vim.ui.input({
+    prompt = "Enter new title: ",
+    default = current_title,
+  }, function(new_title)
+    if not new_title or new_title == "" or new_title == current_title then
+      return
+    end
+    
+    -- Get the date part from current filename
+    local date = filename:match(date_pattern) or (utils.get_date_string(config) .. "-")
+    date = date:sub(1, -2)  -- Remove trailing dash
+    
+    -- Construct new filename
+    local dir = vim.fn.expand('%:p:h')
+    local new_filename = date .. "-" .. new_title .. ".md"
+    local new_path = dir .. "/" .. new_filename
+    
+    -- Check if new file already exists
+    if vim.fn.filereadable(new_path) == 1 then
+      vim.notify("File already exists: " .. new_filename, vim.log.levels.ERROR)
+      return
+    end
+    
+    -- Update the title in the file content if auto_insert_title is enabled
+    if config.auto_insert_title then
+      local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+      if #lines > 0 and lines[1]:match("^# ") then
+        lines[1] = "# " .. new_title
+        vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+      end
+    end
+    
+    -- Save the buffer
+    vim.cmd("write")
+    
+    -- Rename the file
+    local ok, err = os.rename(current_file, new_path)
+    if ok then
+      -- Open the renamed file
+      vim.cmd("edit " .. vim.fn.fnameescape(new_path))
+      -- Delete the old buffer
+      vim.cmd("bdelete #")
+      vim.notify("Renamed to: " .. new_filename, vim.log.levels.INFO)
+    else
+      vim.notify("Failed to rename file: " .. (err or "unknown error"), vim.log.levels.ERROR)
+    end
+  end)
 end
 
 return M
