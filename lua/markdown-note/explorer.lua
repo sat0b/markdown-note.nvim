@@ -194,26 +194,23 @@ local function open_help()
   vim.api.nvim_buf_set_lines(help_buf, 0, -1, false, lines)
   vim.api.nvim_buf_set_option(help_buf, 'modifiable', false)
   
-  -- Calculate window dimensions
-  local width = 55
-  local height = math.min(#lines + 2, 30)
-  
-  -- Get current window dimensions for centering
-  local ui = vim.api.nvim_list_uis()[1]
+  -- Get explorer window dimensions
   local win_width = vim.api.nvim_win_get_width(explorer_win)
   local win_height = vim.api.nvim_win_get_height(explorer_win)
   
-  -- Create floating window
+  -- Use full width and height of explorer window
+  local width = win_width
+  local height = win_height
+  
+  -- Create floating window at top of explorer window
   help_win = vim.api.nvim_open_win(help_buf, true, {
     relative = 'win',
     win = explorer_win,
     width = width,
     height = height,
-    col = math.floor((win_width - width) / 2),
-    row = math.floor((win_height - height) / 2),
-    border = 'rounded',
-    title = ' Help ',
-    title_pos = 'center',
+    col = 0,
+    row = 0,
+    border = 'none',
     style = 'minimal'
   })
   
