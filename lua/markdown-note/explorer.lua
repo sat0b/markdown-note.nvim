@@ -16,6 +16,7 @@ local search_term = ""
 local search_active = false
 local search_matches = {}
 local current_match_index = 0
+local show_help_mode = false
 
 local function get_icon(entry)
   if entry.type == "directory" then
@@ -94,16 +95,74 @@ local function build_tree(path, prefix, expanded_dirs)
   return tree
 end
 
-local function refresh_explorer()
+-- Forward declaration
+local refresh_explorer
+
+-- Help display functions
+local function get_help_lines()
+  return {
+    "Note Explorer Keybindings",
+    "========================",
+    "",
+    "Navigation:",
+    "  Enter/o/l  Open file or expand directory",
+    "  h          Collapse directory",
+    "  q          Close explorer",
+    "  Esc        Close explorer (or clear search)",
+    "",
+    "File Operations:",
+    "  a          Create new note",
+    "  d          Delete selected items",
+    "  r          Rename file",
+    "",
+    "Selection:",
+    "  Space      Toggle selection",
+    "  Ctrl-a     Select all files",
+    "  Ctrl-d     Clear selection",
+    "",
+    "Clipboard:",
+    "  c          Copy selected items",
+    "  x          Cut selected items",
+    "  p          Paste items",
+    "",
+    "Opening Files:",
+    "  Ctrl-x     Open in horizontal split",
+    "  Ctrl-v     Open in vertical split",
+    "  Ctrl-t     Open in new tab",
+    "",
+    "Search:",
+    "  /          Start search",
+    "  n          Next match",
+    "  N          Previous match",
+    "",
+    "Other:",
+    "  R          Refresh explorer",
+    "  g? or H    Toggle this help",
+    "",
+    "Press g? or H again to return to file view"
+  }
+end
+
+local function toggle_help()
+  show_help_mode = not show_help_mode
+  refresh_explorer()
+end
+
+-- Define refresh_explorer
+refresh_explorer = function()
   if not explorer_buf or not vim.api.nvim_buf_is_valid(explorer_buf) then
+    vim.notify("Explorer buffer not valid")
     return
   end
   
   local lines = {}
   
+  -- vim.notify("refresh_explorer called, show_help_mode = " .. tostring(show_help_mode))
+  
   if show_help_mode then
     -- Show help content
     lines = get_help_lines()
+    -- vim.notify("Got " .. #lines .. " help lines")
   else
     -- Show file tree
     local notes_dir = vim.fn.expand(config.notes_dir)
@@ -583,60 +642,7 @@ local function clear_search()
   current_match_index = 0
 end
 
--- State for help display
-local show_help_mode = false
-
--- Help display
-local function toggle_help()
-  show_help_mode = not show_help_mode
-  refresh_explorer()
-  -- Debug message
-  vim.notify("Help mode: " .. tostring(show_help_mode))
-end
-
-local function get_help_lines()
-  return {
-    "Note Explorer Keybindings",
-    "========================",
-    "",
-    "Navigation:",
-    "  Enter/o/l  Open file or expand directory",
-    "  h          Collapse directory",
-    "  q          Close explorer",
-    "  Esc        Close explorer (or clear search)",
-    "",
-    "File Operations:",
-    "  a          Create new note",
-    "  d          Delete selected items",
-    "  r          Rename file",
-    "",
-    "Selection:",
-    "  Space      Toggle selection",
-    "  Ctrl-a     Select all files",
-    "  Ctrl-d     Clear selection",
-    "",
-    "Clipboard:",
-    "  c          Copy selected items",
-    "  x          Cut selected items",
-    "  p          Paste items",
-    "",
-    "Opening Files:",
-    "  Ctrl-x     Open in horizontal split",
-    "  Ctrl-v     Open in vertical split",
-    "  Ctrl-t     Open in new tab",
-    "",
-    "Search:",
-    "  /          Start search",
-    "  n          Next match",
-    "  N          Previous match",
-    "",
-    "Other:",
-    "  R          Refresh explorer",
-    "  g? or H    Toggle this help",
-    "",
-    "Press g? or H again to return to file view"
-  }
-end
+-- Search functions continue below...
 
 local function setup_keymaps()
   local opts = { noremap = true, silent = true, buffer = explorer_buf, nowait = true }
