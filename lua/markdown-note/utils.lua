@@ -7,9 +7,13 @@ end
 function M.get_projects(config)
   local projects = { "(default)" }
   local notes_dir = vim.fn.expand(config.notes_dir)
+  local projects_dir = notes_dir .. "/projects"
   
-  -- Get all directories in notes_dir
-  local handle = vim.loop.fs_scandir(notes_dir)
+  -- Create projects directory if it doesn't exist
+  vim.fn.mkdir(projects_dir, "p")
+  
+  -- Get all directories in projects subdirectory
+  local handle = vim.loop.fs_scandir(projects_dir)
   if handle then
     while true do
       local name, type = vim.loop.fs_scandir_next(handle)
@@ -30,7 +34,7 @@ function M.create_note_path(config, title, project)
   local notes_dir = vim.fn.expand(config.notes_dir)
   
   if project and project ~= "(default)" then
-    local project_dir = notes_dir .. "/" .. project
+    local project_dir = notes_dir .. "/projects/" .. project
     vim.fn.mkdir(project_dir, "p")
     return project_dir .. "/" .. filename
   else
@@ -88,7 +92,7 @@ function M.get_all_notes(config, project)
   end
   
   if project then
-    scan_directory(notes_dir .. "/" .. project, project)
+    scan_directory(notes_dir .. "/projects/" .. project, project)
   else
     scan_directory(notes_dir)
   end
