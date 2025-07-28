@@ -31,6 +31,7 @@ function M.setup(cfg)
   vim.api.nvim_create_user_command("NoteDeleteMulti", M.note_delete_multi, {})
   vim.api.nvim_create_user_command("NoteRename", M.note_rename, {})
   vim.api.nvim_create_user_command("NoteExplorer", M.note_explorer, {})
+  vim.api.nvim_create_user_command("NoteRecent", M.note_recent, {})
 end
 
 function M.note_new()
@@ -386,6 +387,16 @@ end
 
 function M.note_explorer()
   require("markdown-note.explorer").toggle()
+end
+
+function M.note_recent()
+  local recent_note = utils.get_recent_note(config)
+  
+  if recent_note then
+    vim.cmd(config.open_cmd .. " " .. recent_note.path)
+  else
+    vim.notify("No notes found", vim.log.levels.INFO)
+  end
 end
 
 return M

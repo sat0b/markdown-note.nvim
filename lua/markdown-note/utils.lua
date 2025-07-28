@@ -148,4 +148,25 @@ function M.get_all_notes(config, project)
   return notes
 end
 
+function M.get_recent_note(config)
+  local notes = M.get_all_notes(config)
+  
+  if #notes == 0 then
+    return nil
+  end
+  
+  -- Sort notes by modification time (newest first)
+  table.sort(notes, function(a, b)
+    local stat_a = vim.loop.fs_stat(a.path)
+    local stat_b = vim.loop.fs_stat(b.path)
+    
+    if stat_a and stat_b then
+      return stat_a.mtime.sec > stat_b.mtime.sec
+    end
+    return false
+  end)
+  
+  return notes[1]
+end
+
 return M

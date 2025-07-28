@@ -47,6 +47,7 @@ Using lazy.nvim:
 - `:NoteNew` - Create a new note
 - `:NoteQuick <title> [project]` - Quick note creation
 - `:NoteToday` - Open today's daily note (always creates in daily/ folder as YYYY-MM-DD.md)
+- `:NoteRecent` - Open the most recently modified note
 
 ### Browsing Notes
 - `:NoteList [project]` - List notes
@@ -75,12 +76,13 @@ M.notes = {
     ["<leader>nn"] = { "<cmd>NoteNew<cr>", "Create new note" },
     ["<leader>nq"] = { ":NoteQuick ", "Quick note (enter title)" },
     ["<leader>nt"] = { "<cmd>NoteToday<cr>", "Today's note" },
+    ["<leader>nr"] = { "<cmd>NoteRecent<cr>", "Recent note" },
     ["<leader>nl"] = { "<cmd>NoteList<cr>", "List all notes" },
     ["<leader>np"] = { "<cmd>NoteProjects<cr>", "Browse projects" },
     ["<leader>nf"] = { "<cmd>NoteFindFile<cr>", "Find note files" },
     ["<leader>ng"] = { "<cmd>NoteGrep<cr>", "Search in notes" },
     ["<leader>ne"] = { "<cmd>NoteExplorer<cr>", "Toggle note explorer" },
-    ["<leader>nr"] = { "<cmd>NoteRename<cr>", "Rename current note" },
+    ["<leader>nR"] = { "<cmd>NoteRename<cr>", "Rename current note" },
     ["<leader>nd"] = { "<cmd>NoteDelete<cr>", "Delete current note" },
     ["<leader>nD"] = { "<cmd>NoteDeleteMulti<cr>", "Delete multiple notes" },
   }
@@ -96,12 +98,13 @@ return M
 vim.keymap.set("n", "<leader>nn", "<cmd>NoteNew<cr>", { desc = "Create new note" })
 vim.keymap.set("n", "<leader>nq", ":NoteQuick ", { desc = "Quick note" })
 vim.keymap.set("n", "<leader>nt", "<cmd>NoteToday<cr>", { desc = "Today's note" })
+vim.keymap.set("n", "<leader>nr", "<cmd>NoteRecent<cr>", { desc = "Recent note" })
 vim.keymap.set("n", "<leader>nl", "<cmd>NoteList<cr>", { desc = "List notes" })
 vim.keymap.set("n", "<leader>np", "<cmd>NoteProjects<cr>", { desc = "Browse projects" })
 vim.keymap.set("n", "<leader>nf", "<cmd>NoteFindFile<cr>", { desc = "Find notes" })
 vim.keymap.set("n", "<leader>ng", "<cmd>NoteGrep<cr>", { desc = "Search in notes" })
 vim.keymap.set("n", "<leader>ne", "<cmd>NoteExplorer<cr>", { desc = "Toggle explorer" })
-vim.keymap.set("n", "<leader>nr", "<cmd>NoteRename<cr>", { desc = "Rename note" })
+vim.keymap.set("n", "<leader>nR", "<cmd>NoteRename<cr>", { desc = "Rename note" })
 vim.keymap.set("n", "<leader>nd", "<cmd>NoteDelete<cr>", { desc = "Delete current note" })
 vim.keymap.set("n", "<leader>nD", "<cmd>NoteDeleteMulti<cr>", { desc = "Delete multiple notes" })
 ```
