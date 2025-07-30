@@ -1,6 +1,6 @@
 # markdown-note.nvim
 
-A Neovim plugin that manages markdown notes with consistent date-prefixed filenames.
+A Neovim plugin that manages markdown notes with consistent date prefix filenames.
 
 ## How it works
 
@@ -9,21 +9,21 @@ This plugin automatically creates and manages notes with a consistent naming pat
 ```
 ~/Documents/notes/
 ├── daily/                      # Daily notes always go here
-│   ├── 2025-07-27.md          # Created with :NoteToday
+│   ├── 2025-07-27.md          # Created with :NoteToday (YYYY-MM-DD format)
 │   ├── 2025-07-26.md
 │   └── 2025-07-25.md
 ├── project-a/
-│   ├── 2025-07-27-kickoff-meeting.md
-│   ├── 2025-07-26-architecture-design.md
-│   └── 2025-07-25-requirements.md
+│   ├── 250727-kickoff-meeting.md
+│   ├── 250726-architecture-design.md
+│   └── 250725-requirements.md
 ├── project-b/
-│   ├── 2025-07-27-api-design.md
-│   └── 2025-07-26-database-schema.md
-└── 2025-07-27-quick-memo.md
+│   ├── 250727-api-design.md
+│   └── 250726-database-schema.md
+└── 250727-quick-memo.md
 ```
 
 Key features:
-- All notes are prefixed with `YYYY-MM-DD-` format
+- All notes use `YYMMDD-` date prefix format
 - Notes can be organized into project folders
 - Renaming updates both the filename and the markdown title (# header)
 - Built-in explorer sorts files by date or name
@@ -161,8 +161,11 @@ require("markdown-note").setup({
   -- Notes directory
   notes_dir = vim.fn.expand("~/Documents/notes"),
   
-  -- Date format for note filenames
-  date_format = "%Y-%m-%d",
+  -- Date prefix for note filenames
+  date_prefix = "%y%m%d",
+  
+  -- Date prefix for daily notes (used by :NoteToday)
+  daily_date_prefix = "%Y-%m-%d",
   
   -- Default title for new notes
   default_title = "note",

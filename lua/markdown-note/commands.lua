@@ -62,10 +62,15 @@ function M.note_quick(opts)
 end
 
 function M.note_today()
-  local date = utils.get_date_string(config)
+  -- Use daily_date_prefix format for daily notes
+  local date = os.date(config.daily_date_prefix)
   -- Always use "daily" project for today's notes
   local project = "daily"
-  local path = utils.create_note_path(config, date, project)
+  -- Create path directly since we're using a different date format
+  local notes_dir = vim.fn.expand(config.notes_dir)
+  local project_dir = notes_dir .. "/" .. project
+  vim.fn.mkdir(project_dir, "p")
+  local path = project_dir .. "/" .. date .. ".md"
   open_note_with_title(path, date)
 end
 

@@ -1,7 +1,7 @@
 local M = {}
 
 function M.get_date_string(config)
-  return os.date(config.date_format)
+  return os.date(config.date_prefix)
 end
 
 function M.get_projects(config)
