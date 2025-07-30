@@ -292,6 +292,16 @@ local function toggle_help()
   end
 end
 
+-- Setup highlights for explorer
+local function setup_highlights()
+  vim.api.nvim_set_hl(0, 'MarkdownNoteExplorerDirectory', { link = 'Directory' })
+  vim.api.nvim_set_hl(0, 'MarkdownNoteExplorerFile', { link = 'Normal' })
+  vim.api.nvim_set_hl(0, 'MarkdownNoteExplorerDate', { link = 'Comment' })
+  vim.api.nvim_set_hl(0, 'MarkdownNoteExplorerIcon', { link = 'Special' })
+  vim.api.nvim_set_hl(0, 'MarkdownNoteExplorerSelection', { link = 'WarningMsg' })
+  vim.api.nvim_set_hl(0, 'MarkdownNoteExplorerClipboard', { link = 'DiagnosticInfo' })
+end
+
 -- Define refresh_explorer
 refresh_explorer = function()
   if not explorer_buf or not vim.api.nvim_buf_is_valid(explorer_buf) then
@@ -299,6 +309,7 @@ refresh_explorer = function()
   end
   
   local lines = {}
+  local highlights = {}
   local notes_dir = vim.fn.expand(config.notes_dir)
   local expanded_dirs = {}
   
@@ -312,10 +323,11 @@ refresh_explorer = function()
   entries = build_tree(notes_dir, "", expanded_dirs)
   
   -- Build display lines
-  for _, entry in ipairs(entries) do
+  for i, entry in ipairs(entries) do
     local icon = get_icon(entry)
     local selection = get_selection_mark(entry)
     local display_name = entry.name
+    local date_part = nil
     
     -- Extract date from filename if it exists
     if entry.type == "file" then
@@ -323,7 +335,8 @@ refresh_explorer = function()
       local date, title = display_name:match(date_pattern)
       if date and title then
         -- Format: title (YYMMDD)
-        display_name = title .. " (" .. date .. ")"
+        display_name = title
+        date_part = " (" .. date .. ")"
       else
         -- Remove .md extension for files without date prefix
         display_name = display_name:gsub("%.md$", "")
@@ -331,19 +344,80 @@ refresh_explorer = function()
     end
     
     local line = entry.prefix .. selection .. icon .. display_name
+    local line_highlights = {}
+    
+    -- Calculate positions for highlighting
+    local col_start = #entry.prefix
+    
+    -- Selection mark highlight
+    if selected_entries[entry.path] then
+      table.insert(line_highlights, {
+        group = "MarkdownNoteExplorerSelection",
+        line = i - 1,
+        col_start = col_start,
+        col_end = col_start + 2
+      })
+    end
+    col_start = col_start + 2
+    
+    -- Icon highlight
+    table.insert(line_highlights, {
+      group = "MarkdownNoteExplorerIcon",
+      line = i - 1,
+      col_start = col_start,
+      col_end = col_start + 2
+    })
+    col_start = col_start + 2
+    
+    -- Directory/File name highlight
+    local name_end = col_start + #display_name
+    table.insert(line_highlights, {
+      group = entry.type == "directory" and "MarkdownNoteExplorerDirectory" or "MarkdownNoteExplorerFile",
+      line = i - 1,
+      col_start = col_start,
+      col_end = name_end
+    })
+    
+    -- Add date part if exists
+    if date_part then
+      line = line .. date_part
+      table.insert(line_highlights, {
+        group = "MarkdownNoteExplorerDate",
+        line = i - 1,
+        col_start = name_end,
+        col_end = name_end + #date_part
+      })
+    end
     
     -- Add clipboard indicator
     if clipboard.action and vim.tbl_contains(clipboard.entries, entry.path) then
-      line = line .. " [" .. clipboard.action:sub(1,1):upper() .. "]"
+      local clipboard_text = " [" .. clipboard.action:sub(1,1):upper() .. "]"
+      line = line .. clipboard_text
+      local clipboard_start = #line - #clipboard_text
+      table.insert(line_highlights, {
+        group = "MarkdownNoteExplorerClipboard",
+        line = i - 1,
+        col_start = clipboard_start,
+        col_end = #line
+      })
     end
     
     table.insert(lines, line)
+    for _, hl in ipairs(line_highlights) do
+      table.insert(highlights, hl)
+    end
   end
   
   -- Update buffer
   vim.api.nvim_buf_set_option(explorer_buf, 'modifiable', true)
   vim.api.nvim_buf_set_lines(explorer_buf, 0, -1, false, lines)
   vim.api.nvim_buf_set_option(explorer_buf, 'modifiable', false)
+  
+  -- Apply highlights
+  vim.api.nvim_buf_clear_namespace(explorer_buf, -1, 0, -1)
+  for _, hl in ipairs(highlights) do
+    vim.api.nvim_buf_add_highlight(explorer_buf, -1, hl.group, hl.line, hl.col_start, hl.col_end)
+  end
   
   -- Update search matches if active
   if search_active and search_term ~= "" then
@@ -962,6 +1036,9 @@ function M.open()
   
   -- Enable mouse support in this window
   vim.api.nvim_buf_set_option(explorer_buf, 'mouse', 'a')
+  
+  -- Setup highlights
+  setup_highlights()
   
   -- Initial content
   refresh_explorer()
