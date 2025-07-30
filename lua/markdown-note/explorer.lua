@@ -315,7 +315,22 @@ refresh_explorer = function()
   for _, entry in ipairs(entries) do
     local icon = get_icon(entry)
     local selection = get_selection_mark(entry)
-    local line = entry.prefix .. selection .. icon .. entry.name
+    local display_name = entry.name
+    
+    -- Extract date from filename if it exists
+    if entry.type == "file" then
+      local date_pattern = "^(%d%d%d%d%d%d)%-(.+)%.md$"
+      local date, title = display_name:match(date_pattern)
+      if date and title then
+        -- Format: title (YYMMDD)
+        display_name = title .. " (" .. date .. ")"
+      else
+        -- Remove .md extension for files without date prefix
+        display_name = display_name:gsub("%.md$", "")
+      end
+    end
+    
+    local line = entry.prefix .. selection .. icon .. display_name
     
     -- Add clipboard indicator
     if clipboard.action and vim.tbl_contains(clipboard.entries, entry.path) then
