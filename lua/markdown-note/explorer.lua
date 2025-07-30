@@ -346,59 +346,67 @@ refresh_explorer = function()
     local line = entry.prefix .. selection .. icon .. display_name
     local line_highlights = {}
     
-    -- Calculate positions for highlighting
-    local col_start = #entry.prefix
+    -- Calculate positions for highlighting using UTF-8 aware byte positions
+    local prefix_bytes = vim.fn.strlen(entry.prefix)
     
     -- Selection mark highlight
     if selected_entries[entry.path] then
       table.insert(line_highlights, {
         group = "MarkdownNoteExplorerSelection",
         line = i - 1,
-        col_start = col_start,
-        col_end = col_start + 2
+        col_start = prefix_bytes,
+        col_end = vim.fn.strlen(entry.prefix .. selection)
       })
     end
-    col_start = col_start + 2
     
     -- Icon highlight
+    local icon_start = vim.fn.strlen(entry.prefix .. selection)
+    local icon_end = vim.fn.strlen(entry.prefix .. selection .. icon)
     table.insert(line_highlights, {
       group = "MarkdownNoteExplorerIcon",
       line = i - 1,
-      col_start = col_start,
-      col_end = col_start + 2
+      col_start = icon_start,
+      col_end = icon_end
     })
-    col_start = col_start + 2
     
     -- Directory/File name highlight
-    local name_end = col_start + #display_name
+    -- Use UTF-8 aware byte position calculation
+    local line_before_name = entry.prefix .. selection .. icon
+    local name_start_byte = vim.fn.strlen(line_before_name)
+    local name_end_byte = vim.fn.strlen(line_before_name .. display_name)
+    
     table.insert(line_highlights, {
       group = entry.type == "directory" and "MarkdownNoteExplorerDirectory" or "MarkdownNoteExplorerFile",
       line = i - 1,
-      col_start = col_start,
-      col_end = name_end
+      col_start = name_start_byte,
+      col_end = name_end_byte
     })
     
     -- Add date part if exists
     if date_part then
       line = line .. date_part
+      local date_start_byte = name_end_byte
+      local date_end_byte = vim.fn.strlen(line_before_name .. display_name .. date_part)
       table.insert(line_highlights, {
         group = "MarkdownNoteExplorerDate",
         line = i - 1,
-        col_start = name_end,
-        col_end = name_end + #date_part
+        col_start = date_start_byte,
+        col_end = date_end_byte
       })
     end
     
     -- Add clipboard indicator
     if clipboard.action and vim.tbl_contains(clipboard.entries, entry.path) then
       local clipboard_text = " [" .. clipboard.action:sub(1,1):upper() .. "]"
+      local line_before_clipboard = line
       line = line .. clipboard_text
-      local clipboard_start = #line - #clipboard_text
+      local clipboard_start_byte = vim.fn.strlen(line_before_clipboard)
+      local clipboard_end_byte = vim.fn.strlen(line)
       table.insert(line_highlights, {
         group = "MarkdownNoteExplorerClipboard",
         line = i - 1,
-        col_start = clipboard_start,
-        col_end = #line
+        col_start = clipboard_start_byte,
+        col_end = clipboard_end_byte
       })
     end
     
