@@ -23,8 +23,7 @@ function M.setup(cfg)
   vim.api.nvim_create_user_command("NoteQuick", M.note_quick, { nargs = "*" })
   vim.api.nvim_create_user_command("NoteToday", M.note_today, {})
   vim.api.nvim_create_user_command("NoteList", M.note_list, { nargs = "?" })
-  vim.api.nvim_create_user_command("NoteProjects", M.note_projects, {})
-  vim.api.nvim_create_user_command("NoteSetDefault", M.note_set_default, { nargs = 1 })
+  vim.api.nvim_create_user_command("NoteDirectories", M.note_directories, {})
   vim.api.nvim_create_user_command("NoteFindFile", M.note_find_file, {})
   vim.api.nvim_create_user_command("NoteGrep", M.note_grep, {})
   vim.api.nvim_create_user_command("NoteDelete", M.note_delete, {})
@@ -35,12 +34,12 @@ function M.setup(cfg)
 end
 
 function M.note_new()
-  utils.select_project(config, function(project)
+  utils.select_directory(config, function(directory)
     vim.ui.input({
       prompt = "Enter title: ",
     }, function(title)
       if title then
-        local path, note_title = utils.create_note_with_title(config, title, project)
+        local path, note_title = utils.create_note_with_title(config, title, directory)
         open_note_with_title(path, note_title)
       end
     end)
@@ -50,175 +49,78 @@ end
 function M.note_quick(opts)
   local args = vim.split(opts.args, " ")
   local title = args[1]
-  local project = args[2]
+  local directory = args[2]
   
   if not title then
-    vim.notify("Usage: :NoteQuick <title> [project]", vim.log.levels.ERROR)
+    vim.notify("Usage: :NoteQuick <title> [directory]", vim.log.levels.ERROR)
     return
   end
   
-  local path, note_title = utils.create_note_with_title(config, title, project)
+  local path, note_title = utils.create_note_with_title(config, title, directory)
   open_note_with_title(path, note_title)
 end
 
 function M.note_today()
   -- Use daily_date_prefix format for daily notes
   local date = os.date(config.daily_date_prefix)
-  -- Always use "daily" project for today's notes
-  local project = "daily"
+  -- Always use "daily" directory for today's notes
+  local directory = "daily"
   -- Create path directly since we're using a different date format
   local notes_dir = vim.fn.expand(config.notes_dir)
-  local project_dir = notes_dir .. "/" .. project
-  vim.fn.mkdir(project_dir, "p")
-  local path = project_dir .. "/" .. date .. ".md"
+  local dir_path = notes_dir .. "/" .. directory
+  vim.fn.mkdir(dir_path, "p")
+  local path = dir_path .. "/" .. date .. ".md"
   open_note_with_title(path, date)
 end
 
 function M.note_list(opts)
-  local project = opts.args ~= "" and opts.args or nil
-  local notes = utils.get_all_notes(config, project)
+  local directory = opts.args ~= "" and opts.args or nil
+  local notes = utils.get_all_notes(config, directory)
   
   if #notes == 0 then
     vim.notify("No notes found", vim.log.levels.INFO)
     return
   end
   
-  -- Try to use Telescope if available
-  local has_telescope, telescope = pcall(require, "telescope")
-  if has_telescope then
-    local pickers = require("telescope.pickers")
-    local finders = require("telescope.finders")
-    local conf = require("telescope.config").values
-    local actions = require("telescope.actions")
-    local action_state = require("telescope.actions.state")
-    
-    pickers.new({}, {
-      prompt_title = "Select Note",
-      finder = finders.new_table {
-        results = notes,
-        entry_maker = function(entry)
-          return {
-            value = entry,
-            display = entry.display,
-            ordinal = entry.display,
-          }
-        end
-      },
-      sorter = conf.generic_sorter({}),
-      attach_mappings = function(prompt_bufnr, map)
-        actions.select_default:replace(function()
-          actions.close(prompt_bufnr)
-          local selection = action_state.get_selected_entry()
-          if selection then
-            vim.cmd(config.open_cmd .. " " .. selection.value.path)
-          end
-        end)
-        return true
-      end,
-    }):find()
-  else
-    -- Fallback to vim.ui.select
-    vim.ui.select(notes, {
-      prompt = "Select note:",
-      format_item = function(item)
-        return item.display
-      end,
-    }, function(choice)
-      if choice then
-        vim.cmd(config.open_cmd .. " " .. choice.path)
-      end
-    end)
-  end
+  vim.ui.select(notes, {
+    prompt = "Select note:",
+    format_item = function(item)
+      return item.display
+    end,
+  }, function(choice)
+    if choice then
+      vim.cmd(config.open_cmd .. " " .. choice.path)
+    end
+  end)
 end
 
-function M.note_projects()
-  local projects = utils.get_projects(config)
-  local filtered = {}
+function M.note_directories()
+  local directories = utils.get_directories(config)
   
-  for _, project in ipairs(projects) do
-    if project ~= "(default)" and project ~= "(new project)" then
-      table.insert(filtered, project)
-    end
-  end
-  
-  if #filtered == 0 then
-    vim.notify("No projects found", vim.log.levels.INFO)
+  if #directories == 0 then
+    vim.notify("No directories found", vim.log.levels.INFO)
     return
   end
   
-  -- Try to use Telescope if available
-  local has_telescope, telescope = pcall(require, "telescope")
-  if has_telescope then
-    local pickers = require("telescope.pickers")
-    local finders = require("telescope.finders")
-    local conf = require("telescope.config").values
-    local actions = require("telescope.actions")
-    local action_state = require("telescope.actions.state")
-    
-    pickers.new({}, {
-      prompt_title = "Projects",
-      finder = finders.new_table {
-        results = filtered
-      },
-      sorter = conf.generic_sorter({}),
-      attach_mappings = function(prompt_bufnr, map)
-        actions.select_default:replace(function()
-          actions.close(prompt_bufnr)
-          local selection = action_state.get_selected_entry()
-          if selection then
-            M.note_list({ args = selection[1] })
-          end
-        end)
-        return true
-      end,
-    }):find()
-  else
-    -- Fallback to vim.ui.select
-    vim.ui.select(filtered, {
-      prompt = "Projects:",
-      format_item = function(item)
-        return item
-      end,
-    }, function(choice)
-      if choice then
-        M.note_list({ args = choice })
-      end
-    end)
-  end
+  vim.ui.select(directories, {
+    prompt = "Directories:",
+    format_item = function(item)
+      return item
+    end,
+  }, function(choice)
+    if choice then
+      M.note_list({ args = choice })
+    end
+  end)
 end
 
-function M.note_set_default(opts)
-  local project = opts.args
-  config.default_project = project ~= "(default)" and project or nil
-  vim.notify("Default project set to: " .. (project or "(default)"))
-end
 
 function M.note_find_file()
-  local has_telescope, telescope = pcall(require, "telescope.builtin")
-  
-  if not has_telescope then
-    vim.notify("Telescope is required for this feature", vim.log.levels.ERROR)
-    return
-  end
-  
-  telescope.find_files({
-    cwd = config.notes_dir,
-    prompt_title = "Find Notes",
-  })
+  vim.notify("This feature has been removed. Use NoteExplorer instead.", vim.log.levels.INFO)
 end
 
 function M.note_grep()
-  local has_telescope, telescope = pcall(require, "telescope.builtin")
-  
-  if not has_telescope then
-    vim.notify("Telescope is required for this feature", vim.log.levels.ERROR)
-    return
-  end
-  
-  telescope.live_grep({
-    cwd = config.notes_dir,
-    prompt_title = "Search Notes Content",
-  })
+  vim.notify("This feature has been removed. Use NoteExplorer search (/) instead.", vim.log.levels.INFO)
 end
 
 function M.note_delete()
@@ -250,80 +152,7 @@ function M.note_delete()
 end
 
 function M.note_delete_multi()
-  local notes = utils.get_all_notes(config)
-  
-  if #notes == 0 then
-    vim.notify("No notes found", vim.log.levels.INFO)
-    return
-  end
-  
-  -- Try to use Telescope for multi-select
-  local has_telescope, telescope = pcall(require, "telescope")
-  if has_telescope then
-    local pickers = require("telescope.pickers")
-    local finders = require("telescope.finders")
-    local conf = require("telescope.config").values
-    local actions = require("telescope.actions")
-    local action_state = require("telescope.actions.state")
-    
-    pickers.new({}, {
-      prompt_title = "Delete Notes (Tab to select multiple, Enter to confirm)",
-      finder = finders.new_table {
-        results = notes,
-        entry_maker = function(entry)
-          return {
-            value = entry,
-            display = entry.display,
-            ordinal = entry.display,
-          }
-        end
-      },
-      sorter = conf.generic_sorter({}),
-      attach_mappings = function(prompt_bufnr, map)
-        actions.select_default:replace(function()
-          local picker = action_state.get_current_picker(prompt_bufnr)
-          local multi_selections = picker:get_multi_selection()
-          
-          if vim.tbl_isempty(multi_selections) then
-            vim.notify("No notes selected", vim.log.levels.WARN)
-            actions.close(prompt_bufnr)
-            return
-          end
-          
-          actions.close(prompt_bufnr)
-          
-          -- Confirm deletion
-          local count = #multi_selections
-          vim.ui.select({"No", "Yes"}, {
-            prompt = string.format("Delete %d note(s)?", count),
-          }, function(choice)
-            if choice == "Yes" then
-              local deleted = 0
-              for _, selection in ipairs(multi_selections) do
-                local ok, err = os.remove(selection.value.path)
-                if ok then
-                  deleted = deleted + 1
-                else
-                  vim.notify("Failed to delete: " .. selection.value.display, vim.log.levels.ERROR)
-                end
-              end
-              vim.notify(string.format("Deleted %d/%d notes", deleted, count), vim.log.levels.INFO)
-            end
-          end)
-        end)
-        
-        -- Allow multi-selection with Tab
-        map("i", "<Tab>", actions.toggle_selection + actions.move_selection_worse)
-        map("i", "<S-Tab>", actions.toggle_selection + actions.move_selection_better)
-        map("n", "<Tab>", actions.toggle_selection + actions.move_selection_worse)
-        map("n", "<S-Tab>", actions.toggle_selection + actions.move_selection_better)
-        
-        return true
-      end,
-    }):find()
-  else
-    vim.notify("Telescope is required for multi-delete", vim.log.levels.ERROR)
-  end
+  vim.notify("This feature has been removed. Use NoteExplorer for file management.", vim.log.levels.INFO)
 end
 
 function M.note_rename()

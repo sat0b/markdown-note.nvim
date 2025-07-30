@@ -714,8 +714,16 @@ local function delete_entries()
       for _, path in ipairs(selected) do
         local ok = false
         if vim.fn.isdirectory(path) == 1 then
-          -- Delete directory
-          ok = vim.fn.system(string.format("rm -rf %s", vim.fn.shellescape(path))) == ""
+          -- Delete directory using Neovim's built-in function for safety
+          -- First check if the directory is within notes_dir to prevent accidental deletions
+          local notes_dir = vim.fn.expand(config.notes_dir)
+          if not vim.startswith(path, notes_dir) then
+            vim.notify("Cannot delete directory outside of notes directory", vim.log.levels.ERROR)
+            goto continue
+          end
+          
+          -- Use vim.fn.delete with 'rf' flag for recursive deletion
+          ok = vim.fn.delete(path, "rf") == 0
         else
           -- Delete file
           ok = os.remove(path)
@@ -730,6 +738,8 @@ local function delete_entries()
         if ok then
           deleted = deleted + 1
         end
+        
+        ::continue::
       end
       
       vim.notify(string.format("Deleted %d/%d items", deleted, #selected))

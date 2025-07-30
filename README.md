@@ -12,21 +12,21 @@ This plugin automatically creates and manages notes with a consistent naming pat
 │   ├── 2025-07-27.md          # Created with :NoteToday (YYYY-MM-DD format)
 │   ├── 2025-07-26.md
 │   └── 2025-07-25.md
-├── project-a/
+├── project-a/                  # Project directories in root
 │   ├── 250727-kickoff-meeting.md
 │   ├── 250726-architecture-design.md
 │   └── 250725-requirements.md
 ├── project-b/
 │   ├── 250727-api-design.md
 │   └── 250726-database-schema.md
-└── 250727-quick-memo.md
+└── 250727-quick-memo.md        # Root level notes
 ```
 
 Key features:
 - All notes use `YYMMDD-` date prefix format
-- Notes can be organized into project folders
+- Notes can be organized into directories at root level
 - Renaming updates both the filename and the markdown title (# header)
-- Built-in explorer sorts files by date or name
+- Built-in explorer with file management capabilities
 
 ## Installation
 
@@ -45,22 +45,18 @@ Using lazy.nvim:
 
 ### Creating Notes
 - `:NoteNew` - Create a new note
-- `:NoteQuick <title> [project]` - Quick note creation
+- `:NoteQuick <title> [directory]` - Quick note creation
 - `:NoteToday` - Open today's daily note (always creates in daily/ folder as YYYY-MM-DD.md)
 - `:NoteRecent` - Open the most recently modified note
 
 ### Browsing Notes
-- `:NoteList [project]` - List notes
-- `:NoteProjects` - Browse projects
-- `:NoteFindFile` - Find notes with Telescope
-- `:NoteGrep` - Search note contents with Telescope
+- `:NoteList [directory]` - List notes
+- `:NoteDirectories` - Browse directories
 - `:NoteExplorer` - Toggle file explorer at bottom of screen
 
 ### Managing Notes
 - `:NoteRename` - Rename current note (updates both filename and title)
 - `:NoteDelete` - Delete current note (with confirmation)
-- `:NoteDeleteMulti` - Delete multiple notes (Tab to select, Enter to confirm)
-- `:NoteSetDefault <project>` - Set default project
 
 ## Keybindings
 
@@ -78,13 +74,10 @@ M.notes = {
     ["<leader>nt"] = { "<cmd>NoteToday<cr>", "Today's note" },
     ["<leader>nr"] = { "<cmd>NoteRecent<cr>", "Recent note" },
     ["<leader>nl"] = { "<cmd>NoteList<cr>", "List all notes" },
-    ["<leader>np"] = { "<cmd>NoteProjects<cr>", "Browse projects" },
-    ["<leader>nf"] = { "<cmd>NoteFindFile<cr>", "Find note files" },
-    ["<leader>ng"] = { "<cmd>NoteGrep<cr>", "Search in notes" },
+    ["<leader>nD"] = { "<cmd>NoteDirectories<cr>", "Browse directories" },
     ["<leader>ne"] = { "<cmd>NoteExplorer<cr>", "Toggle note explorer" },
     ["<leader>nR"] = { "<cmd>NoteRename<cr>", "Rename current note" },
     ["<leader>nd"] = { "<cmd>NoteDelete<cr>", "Delete current note" },
-    ["<leader>nD"] = { "<cmd>NoteDeleteMulti<cr>", "Delete multiple notes" },
   }
 }
 
@@ -100,18 +93,15 @@ vim.keymap.set("n", "<leader>nq", ":NoteQuick ", { desc = "Quick note" })
 vim.keymap.set("n", "<leader>nt", "<cmd>NoteToday<cr>", { desc = "Today's note" })
 vim.keymap.set("n", "<leader>nr", "<cmd>NoteRecent<cr>", { desc = "Recent note" })
 vim.keymap.set("n", "<leader>nl", "<cmd>NoteList<cr>", { desc = "List notes" })
-vim.keymap.set("n", "<leader>np", "<cmd>NoteProjects<cr>", { desc = "Browse projects" })
-vim.keymap.set("n", "<leader>nf", "<cmd>NoteFindFile<cr>", { desc = "Find notes" })
-vim.keymap.set("n", "<leader>ng", "<cmd>NoteGrep<cr>", { desc = "Search in notes" })
+vim.keymap.set("n", "<leader>nD", "<cmd>NoteDirectories<cr>", { desc = "Browse directories" })
 vim.keymap.set("n", "<leader>ne", "<cmd>NoteExplorer<cr>", { desc = "Toggle explorer" })
 vim.keymap.set("n", "<leader>nR", "<cmd>NoteRename<cr>", { desc = "Rename note" })
 vim.keymap.set("n", "<leader>nd", "<cmd>NoteDelete<cr>", { desc = "Delete current note" })
-vim.keymap.set("n", "<leader>nD", "<cmd>NoteDeleteMulti<cr>", { desc = "Delete multiple notes" })
 ```
 
 ## Note Explorer
 
-The Note Explorer provides a file tree view of your notes at the bottom of the screen with full mouse support.
+The Note Explorer provides a file tree view of your notes at the bottom of the screen with full mouse support. Use it to browse, search, and manage all your notes and directories.
 
 ### Explorer Keybindings
 
@@ -169,9 +159,6 @@ require("markdown-note").setup({
   
   -- Default title for new notes
   default_title = "note",
-  
-  -- Default project for :NoteNew and :NoteQuick (nil for no project)
-  default_project = nil,
   
   -- Command to open notes (edit, split, vsplit, tabedit)
   open_cmd = "edit",

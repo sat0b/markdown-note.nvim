@@ -4,8 +4,8 @@ function M.get_date_string(config)
   return os.date(config.date_prefix)
 end
 
-function M.get_projects(config)
-  local projects = { "(default)" }
+function M.get_directories(config)
+  local directories = {}
   local notes_dir = vim.fn.expand(config.notes_dir)
   -- Get all directories in notes_dir
   local handle = vim.loop.fs_scandir(notes_dir)
@@ -14,16 +14,15 @@ function M.get_projects(config)
       local name, type = vim.loop.fs_scandir_next(handle)
       if not name then break end
       if type == "directory" then
-        table.insert(projects, name)
+        table.insert(directories, name)
       end
     end
   end
   
-  table.insert(projects, "(new project)")
-  return projects
+  return directories
 end
 
-function M.create_note_path(config, title, project)
+function M.create_note_path(config, title, directory)
   local date = M.get_date_string(config)
   local filename
   
@@ -36,88 +35,52 @@ function M.create_note_path(config, title, project)
   
   local notes_dir = vim.fn.expand(config.notes_dir)
   
-  if project and project ~= "(default)" then
-    local project_dir = notes_dir .. "/" .. project
-    vim.fn.mkdir(project_dir, "p")
-    return project_dir .. "/" .. filename
+  if directory then
+    local dir_path = notes_dir .. "/" .. directory
+    vim.fn.mkdir(dir_path, "p")
+    return dir_path .. "/" .. filename
   else
     return notes_dir .. "/" .. filename
   end
 end
 
-function M.create_note_with_title(config, title, project)
-  local path = M.create_note_path(config, title, project)
+function M.create_note_with_title(config, title, directory)
+  local path = M.create_note_path(config, title, directory)
   return path, title
 end
 
-function M.select_project(config, callback)
-  local projects = M.get_projects(config)
+function M.select_directory(config, callback)
+  local directories = M.get_directories(config)
+  table.insert(directories, 1, "(root)")
+  table.insert(directories, "(new directory)")
   
-  -- Try to use Telescope if available
-  local has_telescope, telescope = pcall(require, "telescope")
-  if has_telescope then
-    local pickers = require("telescope.pickers")
-    local finders = require("telescope.finders")
-    local conf = require("telescope.config").values
-    local actions = require("telescope.actions")
-    local action_state = require("telescope.actions.state")
+  vim.ui.select(directories, {
+    prompt = "Select directory:",
+    format_item = function(item)
+      return item
+    end,
+  }, function(choice)
+    if not choice then
+      return
+    end
     
-    pickers.new({}, {
-      prompt_title = "Select Project",
-      finder = finders.new_table {
-        results = projects
-      },
-      sorter = conf.generic_sorter({}),
-      attach_mappings = function(prompt_bufnr, map)
-        actions.select_default:replace(function()
-          actions.close(prompt_bufnr)
-          local selection = action_state.get_selected_entry()
-          if selection then
-            local choice = selection[1]
-            if choice == "(new project)" then
-              vim.ui.input({
-                prompt = "Enter new project name: ",
-              }, function(project_name)
-                if project_name and project_name ~= "" then
-                  callback(project_name)
-                end
-              end)
-            else
-              callback(choice == "(default)" and nil or choice)
-            end
-          end
-        end)
-        return true
-      end,
-    }):find()
-  else
-    -- Fallback to vim.ui.select
-    vim.ui.select(projects, {
-      prompt = "Select project:",
-      format_item = function(item)
-        return item
-      end,
-    }, function(choice)
-      if not choice then
-        return
-      end
-      
-      if choice == "(new project)" then
-        vim.ui.input({
-          prompt = "Enter new project name: ",
-        }, function(project_name)
-          if project_name and project_name ~= "" then
-            callback(project_name)
-          end
-        end)
-      else
-        callback(choice == "(default)" and nil or choice)
-      end
-    end)
-  end
+    if choice == "(new directory)" then
+      vim.ui.input({
+        prompt = "Enter new directory name: ",
+      }, function(dir_name)
+        if dir_name and dir_name ~= "" then
+          callback(dir_name)
+        end
+      end)
+    elseif choice == "(root)" then
+      callback(nil)
+    else
+      callback(choice)
+    end
+  end)
 end
 
-function M.get_all_notes(config, project)
+function M.get_all_notes(config, directory)
   local notes = {}
   local notes_dir = vim.fn.expand(config.notes_dir)
   
@@ -132,15 +95,15 @@ function M.get_all_notes(config, project)
           local path = dir .. "/" .. name
           local display = prefix and (prefix .. "/" .. name) or name
           table.insert(notes, { path = path, display = display })
-        elseif type == "directory" and not project then
+        elseif type == "directory" and not directory then
           scan_directory(dir .. "/" .. name, name)
         end
       end
     end
   end
   
-  if project then
-    scan_directory(notes_dir .. "/" .. project, project)
+  if directory then
+    scan_directory(notes_dir .. "/" .. directory, directory)
   else
     scan_directory(notes_dir)
   end
